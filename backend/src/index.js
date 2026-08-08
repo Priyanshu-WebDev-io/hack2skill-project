@@ -22,6 +22,7 @@ const seminarRoutes = require('./routes/seminarRoutes');
 const participantRoutes = require('./routes/participantRoutes');
 const automationRoutes = require('./routes/automationRoutes');
 const authRoutes = require('./routes/authRoutes');
+const zoomRoutes = require('./routes/zoomRoutes');
 const seedAdmin = require('./seedAdmin');
 
 // Import Automation Cron
@@ -33,6 +34,7 @@ app.use('/api/seminars', seminarRoutes);
 app.use('/api/participants', participantRoutes);
 app.use('/api/automation', automationRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/zoom', zoomRoutes);
 
 // Connect to DB and Start Server
 const PORT = process.env.PORT;

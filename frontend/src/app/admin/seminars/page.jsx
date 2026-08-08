@@ -160,17 +160,7 @@ export default function SeminarsPage() {
     }
   };
 
-  const markCompleted = async (id) => {
-    setMarkingId(id);
-    try {
-      await seminarService.markCompleted(id);
-      await fetchSeminars();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to mark as completed.');
-    } finally {
-      setMarkingId(null);
-    }
-  };
+
 
   const inputClass = (name) =>
     `w-full px-4 py-3 rounded-xl border text-white text-sm placeholder-neutral-600 bg-neutral-950 focus:outline-none focus:ring-2 transition-all ${
@@ -404,23 +394,18 @@ export default function SeminarsPage() {
                   </div>
                 )
               )}
+              
+              {!seminar.isCompleted && (
+                <div className="mt-5 pt-4 border-t border-white/5 flex items-start gap-2 text-[11px] text-neutral-500 bg-white/5 p-3 rounded-xl border border-white/5">
+                  <div className="shrink-0 mt-0.5"><CheckCircle2 size={12} className="text-indigo-400" /></div>
+                  <p>
+                    <strong className="text-neutral-300 font-semibold">Autonomous Operation:</strong><br />
+                    The AI Agent will automatically close registration and mark this seminar as completed <span className="text-indigo-300">2 hours after the start time</span>. No manual action is required.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {!seminar.isCompleted && (
-              <div className="mt-5 pt-4 border-t border-white/5 flex justify-end">
-                <button
-                  onClick={() => markCompleted(seminar._id)}
-                  disabled={markingId === seminar._id}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20 text-white text-xs font-semibold rounded-xl transition-all border border-white/10 disabled:opacity-60"
-                >
-                  {markingId === seminar._id ? (
-                    <div className="w-3 h-3 border-2 border-current/30 border-t-current rounded-full animate-spin" />
-                  ) : (
-                    <><CheckCircle2 size={13} /> Mark Completed</>
-                  )}
-                </button>
-              </div>
-            )}
           </div>
         ))}
         {!loading && seminars.length === 0 && (

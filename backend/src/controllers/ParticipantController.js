@@ -1,6 +1,7 @@
 const Participant = require('../models/Participant');
 const Seminar = require('../models/Seminar');
 const { isEnrollmentOpen } = require('../utils/weekSchedule');
+const { sendZoomLinkEmail } = require('../automation/mailer');
 
 exports.registerParticipant = async (req, res) => {
   try {
@@ -45,6 +46,11 @@ exports.registerParticipant = async (req, res) => {
       seminarId,
       paymentStatus: 'success', // Auto success for MVP
     });
+
+    // Fire off the zoom link email in the background
+    sendZoomLinkEmail(participant, activeSeminar).catch(err => 
+      console.error('[ParticipantController] Failed to send registration email:', err)
+    );
 
     res.status(201).json({ success: true, data: participant });
   } catch (error) {

@@ -63,9 +63,9 @@ export default function AdminOverview() {
   return (
     <div className="p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Overview</h1>
+        <h1 className="text-3xl font-bold text-white tracking-tight">Agent Operations Hub</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          High-level metrics for your seminars and automation as of {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+          Live autonomous metrics and AI operations as of {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export default function AdminOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 p-6 bg-neutral-900 border border-white/5 rounded-3xl flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">Recent Automation Activity</h2>
+            <h2 className="text-xl font-bold text-white">Live Agent Actions</h2>
             <Link href="/admin/logs" className="text-sm text-indigo-400 hover:text-indigo-300 font-medium">
               View all
             </Link>
@@ -125,7 +125,7 @@ export default function AdminOverview() {
         </div>
 
         <div className="p-6 bg-neutral-900 border border-white/5 rounded-3xl">
-           <h2 className="text-xl font-bold text-white mb-4">Quick Links</h2>
+           <h2 className="text-lg font-bold text-white mb-4">Agent Controls</h2>
            <div className="space-y-3">
              <Link href="/admin/leads" className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
                <div className="flex items-center gap-3">

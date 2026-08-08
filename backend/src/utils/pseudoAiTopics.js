@@ -1,0 +1,60 @@
+const TECH_TOPICS = [
+  "Prompt Engineering in 2026: Advanced Techniques",
+  "Building Autonomous AI Agents with LangChain",
+  "The Future of Web3 and Decentralized Finance",
+  "Mastering React Compiler & React 19",
+  "Introduction to Quantum Machine Learning",
+  "Zero-Trust Security Architecture for Modern Apps",
+  "Building High-Performance APIs with Go 1.25",
+  "Scaling Node.js Microservices on Kubernetes",
+  "Full-Stack Next.js 16: The Ultimate Guide",
+  "Serverless Computing with AWS Lambda and Edge",
+  "Exploring the Metaverse: VR and AR Development",
+  "Data Engineering Pipelines with Apache Kafka",
+  "Rust for WebAssembly: High-Speed Web Apps",
+  "Ethical AI and Bias Mitigation Strategies",
+  "Designing Resilient Distributed Systems",
+  "Mastering TypeScript 6.0 Advanced Features",
+  "DevOps Automation with GitHub Actions",
+  "GraphQL vs REST in 2026",
+  "Optimizing Web Core Vitals for SEO",
+  "Introduction to Edge AI and On-Device Models",
+  "Cloud-Native Architecture Patterns",
+  "Building Cross-Platform Apps with React Native",
+  "Machine Learning Operations (MLOps) Essentials",
+  "Demystifying Large Language Models (LLMs)",
+  "Cybersecurity Threat Hunting Techniques",
+  "Modern CSS: Container Queries and Subgrid",
+  "Building Real-Time Apps with WebSockets",
+  "Exploring Vector Databases for AI Search",
+  "Automated Testing Strategies for Web Apps",
+  "Agile Methodologies for Software Engineering",
+  "Designing RESTful APIs with OpenAPI 3.1",
+  "Introduction to Decentralized Identity (DID)",
+  "Performance Profiling in Node.js",
+  "Advanced State Management in React",
+  "Building Interactive Data Visualizations",
+  "The Rise of Low-Code and No-Code Platforms",
+  "Introduction to Natural Language Processing",
+  "Securing Cloud Infrastructure with Terraform",
+  "Mastering Docker and Containerization",
+  "Building Accessible Web Applications (a11y)",
+  "Introduction to Smart Contract Development",
+  "Exploring the Internet of Things (IoT)",
+  "Data Privacy and GDPR Compliance for Devs",
+  "Building Voice Interfaces with AI",
+  "The Role of AI in Software Testing",
+  "Designing Scalable Database Architectures",
+  "Introduction to Computer Vision",
+  "Exploring Brain-Computer Interfaces",
+  "The Future of Cloud Native WebAssembly",
+  "Building Sustainable Green Software"
+];
+
+const getRandomTopic = (fallback = "Tech Seminar") => {
+  if (!TECH_TOPICS || TECH_TOPICS.length === 0) return fallback;
+  const randomIndex = Math.floor(Math.random() * TECH_TOPICS.length);
+  return TECH_TOPICS[randomIndex];
+};
+
+module.exports = { getRandomTopic, TECH_TOPICS };

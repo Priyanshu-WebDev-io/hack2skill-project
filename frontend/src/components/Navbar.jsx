@@ -23,7 +23,7 @@ export default function Navbar({ onAuthClick }) {
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
                 S
               </div>
-              Seminar<span className="text-indigo-400">Pro</span>
+              Seminar<span className="text-indigo-400">Pilot</span>
             </Link>
           </div>
           
@@ -36,7 +36,7 @@ export default function Navbar({ onAuthClick }) {
                     className="flex items-center gap-2 text-sm text-neutral-300 hover:text-white transition-colors"
                   >
                     <LayoutDashboard size={16} />
-                    Dashboard
+                    Agent Hub
                   </Link>
                 )}
                 <button 

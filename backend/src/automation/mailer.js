@@ -8,10 +8,11 @@ let transporter;
 async function initTransporter() {
   try {
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const port = Number(process.env.SMTP_PORT) || 587;
       transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: process.env.SMTP_PORT || 587,
-        secure: false,
+        port: port,
+        secure: port === 465, // True for 465, false for 587/25
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
