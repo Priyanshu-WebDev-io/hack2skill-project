@@ -37,7 +37,7 @@ export default function ParticipantDashboard() {
     if (!participant || participant.attendanceStatus !== 'attended') return;
     
     // Trigger download from backend API
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
     window.open(`${API_URL}/participants/${participant._id}/certificate`, '_blank');
   };
 

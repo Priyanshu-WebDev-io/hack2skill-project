@@ -2,9 +2,8 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
-// Client ID should ideally come from env, but we'll allow it as a placeholder until the user provides it
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const generateToken = (userId, role) => {

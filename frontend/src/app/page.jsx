@@ -28,7 +28,7 @@ export default function Home() {
       await apiService.registerParticipant({
         ...formData,
         amount: 500, // example amount
-        seminarId: '64a1f5a5e4b0a1b2c3d4e5f6', // Mock ObjectId for testing
+        seminarId: process.env.NEXT_PUBLIC_DEFAULT_SEMINAR_ID,
       });
       setStatus('success');
     } catch (err) {

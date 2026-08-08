@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 exports.protect = async (req, res, next) => {
   let token;

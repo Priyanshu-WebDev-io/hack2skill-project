@@ -31,8 +31,8 @@ app.use('/api/participants', participantRoutes);
 app.use('/api/automation', automationRoutes);
 
 // Connect to DB and Start Server
-const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hack2skill_project';
+const PORT = process.env.PORT;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI)
   .then(() => {
