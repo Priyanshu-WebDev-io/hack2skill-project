@@ -79,15 +79,24 @@ mongoose.connect(MONGODB_URI)
       console.error('Failed to sync seminar indexes:', err);
     });
     seedAdmin(); // Run seed after DB connects
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      initCronJobs();
-      runAutomationCycle('startup').catch(err => {
-        console.error('[Startup] Automation cycle failed:', err);
+    
+    // Only bind to port and run local cron if not on Vercel Serverless
+    if (!process.env.VERCEL) {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        initCronJobs();
+        runAutomationCycle('startup').catch(err => {
+          console.error('[Startup] Automation cycle failed:', err);
+        });
       });
-    });
+    }
   })
   .catch(err => {
     console.error('MongoDB connection error:', err);
-    process.exit(1);
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   });
+
+// Export app for Vercel Serverless deployment
+module.exports = app;

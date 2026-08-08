@@ -101,3 +101,22 @@ exports.runAutomationNow = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.vercelCron = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ success: false, message: 'Unauthorized Vercel Cron' });
+    }
+
+    const result = await runAutomationCycle('vercel_cron');
+
+    res.status(200).json({
+      success: true,
+      message: 'Vercel Cron automation cycle completed.',
+      data: result
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
