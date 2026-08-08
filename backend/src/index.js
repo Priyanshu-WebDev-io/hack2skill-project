@@ -18,6 +18,9 @@ app.use(helmet());
 app.use(compression());
 
 // Security: Prevent DDoS and API Spam
+// Tell Express to trust the Vercel reverse proxy so rate limiting uses the real client IP
+app.set('trust proxy', 1);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
