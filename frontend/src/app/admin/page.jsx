@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Users, FileText, CheckCircle2, TrendingUp, AlertCircle, Clock } from 'lucide-react';
-import apiService from '@/services/apiService';
+import participantService from '@/services/participantService';
+import automationService from '@/services/automationService';
 import Link from 'next/link';
 
 export default function AdminOverview() {
@@ -21,8 +22,8 @@ export default function AdminOverview() {
   const fetchStats = async () => {
     try {
       const [leadsRes, logsRes] = await Promise.all([
-        apiService.getParticipants(),
-        apiService.getAutomationLogs()
+        participantService.getParticipants(),
+        automationService.getAutomationLogs()
       ]);
       
       const leads = leadsRes.data || [];

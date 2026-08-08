@@ -30,13 +30,15 @@ export default function Navbar({ onAuthClick }) {
           <div className="flex items-center gap-4">
             {user ? (
               <>
-                <Link 
-                  href={user.role === 'admin' ? '/admin' : '/user/dashboard'} 
-                  className="flex items-center gap-2 text-sm text-neutral-300 hover:text-white transition-colors"
-                >
-                  <LayoutDashboard size={16} />
-                  Dashboard
-                </Link>
+                {user.role === 'admin' && (
+                  <Link 
+                    href="/admin"
+                    className="flex items-center gap-2 text-sm text-neutral-300 hover:text-white transition-colors"
+                  >
+                    <LayoutDashboard size={16} />
+                    Dashboard
+                  </Link>
+                )}
                 <button 
                   onClick={handleLogout}
                   className="flex items-center gap-2 text-sm text-neutral-400 hover:text-red-400 transition-colors"

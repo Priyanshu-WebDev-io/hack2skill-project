@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Search, Phone, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import apiService from '@/services/apiService';
+import participantService from '@/services/participantService';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -16,7 +16,7 @@ export default function LeadsPage() {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const data = await apiService.getParticipants();
+      const data = await participantService.getParticipants();
       setLeads(data.data || []);
     } catch (error) {
       console.error("Failed to fetch leads", error);
@@ -33,7 +33,7 @@ export default function LeadsPage() {
 
   const handleMarkAttended = async (id) => {
     try {
-      await apiService.markAttendance(id);
+      await participantService.markAttendance(id);
       // Refresh the specific lead locally
       setLeads(leads.map(lead => lead._id === id ? { ...lead, attendanceStatus: 'attended' } : lead));
     } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar, Plus, Clock, Video, CheckCircle2 } from 'lucide-react';
-import apiService from '@/services/apiService';
+import seminarService from '@/services/seminarService';
 
 export default function SeminarsPage() {
   const [seminars, setSeminars] = useState([]);
@@ -23,7 +23,7 @@ export default function SeminarsPage() {
   const fetchSeminars = async () => {
     setLoading(true);
     try {
-      const data = await apiService.getSeminars();
+      const data = await seminarService.getSeminars();
       setSeminars(data.data || []);
     } catch (error) {
       console.error("Failed to fetch seminars", error);
@@ -35,7 +35,7 @@ export default function SeminarsPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await apiService.createSeminar({
+      await seminarService.createSeminar({
         ...formData,
         weekNumber: parseInt(formData.weekNumber)
       });

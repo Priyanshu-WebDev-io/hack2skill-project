@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Download, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
-import apiService from '@/services/apiService';
+import participantService from '@/services/participantService';
 
 export default function ParticipantDashboard() {
   const [email, setEmail] = useState('');
@@ -18,7 +18,7 @@ export default function ParticipantDashboard() {
     
     try {
       // Mocking a login by fetching all participants and finding the matching email
-      const data = await apiService.getParticipants();
+      const data = await participantService.getParticipants();
       const user = data.data?.find(p => p.email.toLowerCase() === email.toLowerCase());
       
       if (user) {

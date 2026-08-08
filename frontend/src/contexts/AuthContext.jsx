@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import apiService from '@/services/apiService';
+import authService from '@/services/authService';
 import Cookies from 'js-cookie';
 
 const AuthContext = createContext({});
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    const res = await apiService.login({ email, password });
+    const res = await authService.login({ email, password });
     if (res.success && res.token) {
       setAuth(res.token, res.user);
     }
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerUser = async (name, email, password, mobileNumber) => {
-    const res = await apiService.register({ name, email, password, mobileNumber });
+    const res = await authService.register({ name, email, password, mobileNumber });
     if (res.success && res.token) {
       setAuth(res.token, res.user);
     }
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const googleLogin = async (credential) => {
-    const res = await apiService.googleLogin({ token: credential });
+    const res = await authService.googleLogin({ credential });
     if (res.success && res.token) {
       setAuth(res.token, res.user);
     }
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const verifyOtp = async (email, otp) => {
-    const res = await apiService.verifyOtp({ email, otp });
+    const res = await authService.verifyOtp({ email, otp });
     if (res.success && res.token) {
       setAuth(res.token, res.user);
     }
@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resendOtp = async (email) => {
-    const res = await apiService.resendOtp({ email });
+    const res = await authService.resendOtp({ email });
     return res;
   };
 

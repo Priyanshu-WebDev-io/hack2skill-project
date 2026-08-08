@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Search, FileText, Send, Download } from 'lucide-react';
-import apiService from '@/services/apiService';
+import automationService from '@/services/automationService';
 
 export default function LogsPage() {
   const [logs, setLogs] = useState([]);
@@ -16,7 +16,7 @@ export default function LogsPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const data = await apiService.getAutomationLogs();
+      const data = await automationService.getAutomationLogs();
       setLogs(data.data || []);
     } catch (error) {
       console.error("Failed to fetch logs", error);

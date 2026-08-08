@@ -4,11 +4,18 @@ const automationLogSchema = new mongoose.Schema({
   participantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Participant',
-    required: true
+    required: false,
+    default: null
+  },
+  seminarId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Seminar',
+    required: false,
+    default: null
   },
   actionType: {
     type: String,
-    enum: ['email_sent', 'pdf_downloaded'],
+    enum: ['email_sent', 'pdf_downloaded', 'seminar_created', 'automation_run', 'zoom_meeting_created'],
     required: true
   },
   status: {
@@ -23,5 +30,7 @@ const automationLogSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+automationLogSchema.index({ participantId: 1, seminarId: 1, actionType: 1, status: 1 });
 
 module.exports = mongoose.model('AutomationLog', automationLogSchema);

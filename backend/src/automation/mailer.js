@@ -6,17 +6,20 @@ const { logAction } = require('./actionLogger');
 let transporter;
 
 async function initTransporter() {
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-  } else {
+  try {
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: process.env.SMTP_PORT || 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+      return;
+    }
+
     // Generate test account for local testing
     let testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
@@ -29,10 +32,11 @@ async function initTransporter() {
       }
     });
     console.log('[Mailer] Using Ethereal test account');
+  } catch (error) {
+    transporter = null;
+    console.error('[Mailer] Failed to initialize transporter:', error.message);
   }
 }
-
-initTransporter();
 
 const sendZoomLinkEmail = async (participant, seminar) => {
   try {
@@ -50,11 +54,19 @@ const sendZoomLinkEmail = async (participant, seminar) => {
     console.log(`[Mailer] Message sent to ${participant.email}: %s`, info.messageId);
     
     // Log the successful action
-    await logAction(participant._id, 'email_sent', 'success', `Sent zoom link for ${seminar.title}`);
+    await logAction(
+      participant._id,
+      'email_sent',
+      'success',
+      `Sent zoom link for ${seminar.title}`,
+      { seminarId: seminar._id }
+    );
     return true;
   } catch (error) {
     console.error('[Mailer] Error sending email:', error);
-    await logAction(participant._id, 'email_sent', 'failed', error.message);
+    await logAction(participant._id, 'email_sent', 'failed', error.message, {
+      seminarId: seminar?._id || null
+    });
     return false;
   }
 };

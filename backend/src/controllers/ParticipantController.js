@@ -1,20 +1,37 @@
 const Participant = require('../models/Participant');
 const Seminar = require('../models/Seminar');
+const { isEnrollmentOpen } = require('../utils/weekSchedule');
 
 exports.registerParticipant = async (req, res) => {
   try {
-    const { name, email, mobileNumber, seminarId, amount } = req.body;
+    const { name, email, mobileNumber } = req.body;
+    const now = new Date();
     
-    // In MVP, we just assign them a success payment for simplicity 
-    // unless they specifically want razorpay. Let's just create the lead.
+    const activeSeminar = await Seminar.findOne({
+      isCompleted: false,
+      registrationStartDate: { $lte: now },
+      registrationEndDate: { $gte: now }
+    }).sort({ seminarYear: -1, weekNumber: -1 });
     
-    if (!seminarId) {
-      return res.status(400).json({ success: false, message: 'Seminar ID is required' });
+    if (!activeSeminar || !isEnrollmentOpen(activeSeminar, now)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Enrollments are open Monday to Saturday only. Please register in the next cycle.'
+      });
     }
 
-    const seminar = await Seminar.findById(seminarId);
-    if (!seminar || !seminar.registrationOpen) {
-      return res.status(400).json({ success: false, message: 'Seminar not found or registration is closed' });
+    const seminarId = activeSeminar._id;
+
+    const existingParticipant = await Participant.findOne({
+      seminarId,
+      email: String(email).trim().toLowerCase()
+    });
+
+    if (existingParticipant) {
+      return res.status(409).json({
+        success: false,
+        message: `You are already enrolled for ${activeSeminar.weekLabel}.`
+      });
     }
 
     const participant = await Participant.create({
@@ -50,9 +67,28 @@ exports.markAttendance = async (req, res) => {
 
 exports.getParticipants = async (req, res) => {
   try {
-    const { seminarId } = req.query;
-    const query = seminarId ? { seminarId } : {};
-    const participants = await Participant.find(query).populate('seminarId', 'title date');
+    const { search, weekNumber, status } = req.query;
+    
+    let query = {};
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (status) {
+      query.attendanceStatus = status; // e.g. 'attended' or 'not_joined'
+    }
+
+    // Populate seminarId to filter by weekNumber if needed
+    let participants = await Participant.find(query).populate('seminarId', 'title weekLabel date weekNumber seminarYear');
+    
+    if (weekNumber) {
+      participants = participants.filter(p => p.seminarId && p.seminarId.weekNumber === parseInt(weekNumber));
+    }
+    
     res.status(200).json({ success: true, data: participants });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

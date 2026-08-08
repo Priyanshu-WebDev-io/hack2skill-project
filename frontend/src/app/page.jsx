@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, CheckCircle2, Shield, Zap, Target, Sparkles, Calendar, Clock, MapPin } from "lucide-react";
-import apiService from "@/services/apiService";
+import { useState, useEffect } from "react";
+import { ArrowRight, CheckCircle2, Shield, Zap, Target, Sparkles, Calendar, Clock, MapPin, Video, Download } from "lucide-react";
+import participantService from "@/services/participantService";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
 import AuthModal from "@/components/AuthModal";
@@ -19,8 +19,48 @@ export default function Home() {
     highestQualification: '',
   });
   
-  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error, enrolled
   const [errorMsg, setErrorMsg] = useState('');
+  const [participant, setParticipant] = useState(null);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchParticipantByEmail(user.email);
+    }
+  }, [user]);
+
+  const fetchParticipantByEmail = async (email) => {
+    try {
+      const res = await participantService.getParticipants({ search: email });
+      const exactMatches = (res.data || []).filter(p => p.email.toLowerCase() === email.toLowerCase());
+      if (exactMatches.length > 0) {
+        setParticipant(exactMatches[exactMatches.length - 1]);
+        setStatus('enrolled');
+      }
+    } catch (err) {
+      console.error("Failed to fetch participant details", err);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!participant) return;
+    try {
+      setDownloading(true);
+      const blob = await participantService.downloadCertificate(participant._id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${participant.name.replace(/\\s+/g, '_')}_Certificate.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (err) {
+      alert('Failed to download certificate. Ensure you have attended the seminar and it is marked completed.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -37,7 +77,7 @@ export default function Home() {
     setErrorMsg('');
     
     try {
-      await apiService.registerParticipant({
+      await participantService.registerParticipant({
         ...formData,
         name: user.name || formData.name, // Pre-fill from user context if available
         email: user.email || formData.email,
@@ -108,7 +148,81 @@ export default function Home() {
             {/* Subtle gradient hover effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
             
-            {status === 'success' ? (
+            {status === 'enrolled' && participant ? (
+              <div className="space-y-6 relative z-10 py-2">
+                <div className="space-y-1 mb-6 text-center">
+                  <h3 className="text-2xl font-bold text-text-primary">Welcome, {user.name.split(' ')[0]}!</h3>
+                  <p className="text-sm text-text-secondary">
+                    You are already enrolled. Here are your details.
+                  </p>
+                </div>
+                
+                {/* Seminar Details */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 shadow-inner">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-3">
+                      Week {participant.seminarId?.weekNumber} Cohort
+                    </div>
+                    <h2 className="text-lg font-bold text-white leading-tight">{participant.seminarId?.title}</h2>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-2">
+                    <div className="flex items-center gap-3 text-neutral-400 text-sm font-medium">
+                      <Calendar size={16} className="text-indigo-400" />
+                      <span>{new Date(participant.seminarId?.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-neutral-400 text-sm font-medium">
+                      <Clock size={16} className="text-indigo-400" />
+                      <span>{new Date(participant.seminarId?.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Zoom Link Section */}
+                <div className="pt-2">
+                  <h3 className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Meeting Details</h3>
+                  {participant.seminarId?.zoomLink ? (
+                    <div className="flex items-center gap-3 bg-black/40 p-3 rounded-xl border border-white/5">
+                      <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg shrink-0">
+                        <Video size={20} />
+                      </div>
+                      <div className="flex-1 overflow-hidden min-w-0">
+                        <p className="text-white font-medium text-sm truncate">{participant.seminarId.zoomLink}</p>
+                      </div>
+                      <a href={participant.seminarId.zoomLink} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shrink-0 shadow-lg shadow-blue-900/20">
+                        Join
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-neutral-500 text-sm italic bg-black/20 p-3 rounded-xl border border-white/5">Zoom link will be sent shortly before start.</p>
+                  )}
+                </div>
+
+                {/* Certificate Section */}
+                <div className="pt-2">
+                  <h3 className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Certificate</h3>
+                  <button 
+                    onClick={handleDownload}
+                    disabled={!(participant.attendanceStatus === 'attended' && participant.seminarId?.isCompleted) || downloading}
+                    className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
+                      (participant.attendanceStatus === 'attended' && participant.seminarId?.isCompleted)
+                        ? 'bg-white text-black hover:bg-neutral-200' 
+                        : 'bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none'
+                    }`}
+                  >
+                    {downloading ? (
+                      <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <Download size={18} />
+                        {(participant.attendanceStatus === 'attended' && participant.seminarId?.isCompleted) ? 'Download PDF' : 'Locked until completion'}
+                      </>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+            ) : status === 'success' ? (
               <div className="py-12 text-center space-y-4 animate-in fade-in zoom-in duration-500">
                 <div className="w-16 h-16 bg-success-500/20 text-success-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                   <CheckCircle2 size={32} />
