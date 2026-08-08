@@ -56,6 +56,14 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
+  const verifyEmail = async (token) => {
+    const res = await apiService.verifyEmail(token);
+    if (res.success && res.token) {
+      setAuth(res.token, res.user);
+    }
+    return res;
+  };
+
   const logout = () => {
     Cookies.remove('token');
     Cookies.remove('user');
@@ -63,7 +71,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, registerUser, googleLogin, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, registerUser, googleLogin, verifyEmail, logout }}>
       {children}
     </AuthContext.Provider>
   );

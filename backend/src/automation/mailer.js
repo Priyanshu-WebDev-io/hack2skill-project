@@ -59,4 +59,28 @@ const sendZoomLinkEmail = async (participant, seminar) => {
   }
 };
 
-module.exports = { sendZoomLinkEmail };
+const sendVerificationEmail = async (user, token) => {
+  try {
+    if (!transporter) await initTransporter();
+
+    // Frontend URL where the user will click to verify
+    const verificationUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/verify/${token}`;
+
+    const mailOptions = {
+      from: '"Seminar Autopilot" <noreply@seminar.com>',
+      to: user.email,
+      subject: `Verify your email address`,
+      text: `Hi ${user.name},\n\nPlease verify your email by clicking the following link:\n${verificationUrl}`,
+      html: `<p>Hi ${user.name},</p><p>Please verify your email by clicking the link below:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Mailer] Verification email sent to ${user.email}: %s`, info.messageId);
+    return true;
+  } catch (error) {
+    console.error('[Mailer] Error sending verification email:', error);
+    return false;
+  }
+};
+
+module.exports = { sendZoomLinkEmail, sendVerificationEmail };

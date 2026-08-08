@@ -32,6 +32,10 @@ const apiService = {
     const response = await api.post('/auth/google', payload);
     return response.data;
   },
+  verifyEmail: async (token) => {
+    const response = await api.get(`/auth/verify/${token}`);
+    return response.data;
+  },
 
   // Participants
   registerParticipant: async (payload) => {

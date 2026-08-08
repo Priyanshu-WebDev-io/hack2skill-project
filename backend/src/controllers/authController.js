@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
+const { sendVerificationEmail } = require('../automation/mailer');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -19,10 +21,20 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
-    user = await User.create({ name, email, password });
+    user = await User.create({ 
+      name, 
+      email, 
+      password,
+      verificationToken: crypto.randomBytes(32).toString('hex'),
+      isVerified: false
+    });
     
-    const token = generateToken(user._id, user.role);
-    res.status(201).json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    await sendVerificationEmail(user, user.verificationToken);
+    
+    res.status(201).json({ 
+      success: true, 
+      message: 'Registration successful! Please check your email to verify your account.'
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -35,6 +47,10 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!user.isVerified && !user.googleId) {
+      return res.status(403).json({ success: false, message: 'Please verify your email address before logging in.' });
     }
 
     const isMatch = await user.comparePassword(password);
@@ -95,6 +111,7 @@ exports.googleLogin = async (req, res) => {
         email,
         googleId,
         password: '', // No password for google auth users
+        isVerified: true // Google accounts are pre-verified
       });
     }
 
@@ -103,5 +120,33 @@ exports.googleLogin = async (req, res) => {
   } catch (error) {
     console.error('Google login error:', error);
     res.status(500).json({ success: false, message: 'Google authentication failed' });
+  }
+};
+
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    await user.save();
+
+    // Optionally generate a JWT to log them in automatically
+    const jwtToken = generateToken(user._id, user.role);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Email verified successfully',
+      token: jwtToken,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    res.status(500).json({ success: false, message: 'Email verification failed' });
   }
 };
