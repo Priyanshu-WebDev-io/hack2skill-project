@@ -14,7 +14,7 @@ const generateToken = (userId, role) => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, mobileNumber } = req.body;
     
     let user = await User.findOne({ email });
     if (user) {
@@ -25,6 +25,7 @@ exports.register = async (req, res) => {
       name, 
       email, 
       password,
+      mobileNumber,
       verificationToken: crypto.randomBytes(32).toString('hex'),
       isVerified: false
     });

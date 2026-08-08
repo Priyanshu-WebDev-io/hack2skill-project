@@ -40,8 +40,8 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
-  const registerUser = async (name, email, password) => {
-    const res = await apiService.register({ name, email, password });
+  const registerUser = async (name, email, password, mobileNumber) => {
+    const res = await apiService.register({ name, email, password, mobileNumber });
     if (res.success && res.token) {
       setAuth(res.token, res.user);
     }

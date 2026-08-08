@@ -14,7 +14,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    mobileNumber: ''
   });
 
   if (!isOpen) return null;
@@ -30,7 +31,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         onSuccess?.();
         onClose();
       } else {
-        const res = await registerUser(formData.name, formData.email, formData.password);
+        const res = await registerUser(formData.name, formData.email, formData.password, formData.mobileNumber);
         if (res.success && !res.token) {
           // Token is missing, which means verification is required
           setVerificationSent(true);
@@ -97,22 +98,43 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-neutral-300">Full Name</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                  <User size={16} />
+            <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-neutral-300">Full Name</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                    <User size={16} />
+                  </div>
+                  <input
+                    required
+                    type="text"
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
+                    placeholder="John Doe"
+                  />
                 </div>
-                <input
-                  required
-                  type="text"
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
-                  placeholder="John Doe"
-                />
               </div>
-            </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-neutral-300">Mobile Number</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <input
+                    required
+                    type="tel"
+                    value={formData.mobileNumber}
+                    onChange={e => setFormData({...formData, mobileNumber: e.target.value})}
+                    className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
+                    placeholder="10-digit number"
+                  />
+                </div>
+              </div>
+            </>
           )}
           
           <div className="space-y-1.5">

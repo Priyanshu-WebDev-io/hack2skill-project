@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Seminar = require('./src/models/Seminar');
+const seedAdmin = require('./src/seedAdmin');
 
 dotenv.config();
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hack2skill_project';
@@ -20,6 +21,10 @@ async function seed() {
   });
 
   console.log('Seeded Seminar:', seminar);
+  
+  // Seed the admin
+  await seedAdmin();
+
   process.exit(0);
 }
 
