@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Sparkles, Calendar, Clock, MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
-import seminarLeadService from '@/services/seminarLeadService';
+import apiService from '@/services/apiService';
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -25,17 +25,10 @@ export default function Home() {
     setErrorMsg('');
     
     try {
-      // In a real scenario, this connects to Razorpay via the initiateRegistration endpoint
-      // For this isolated demo, we'll hit processWebRegistration directly to simulate success
-      await seminarLeadService.processWebRegistration({
+      await apiService.registerParticipant({
         ...formData,
         amount: 500, // example amount
-        paymentStatus: 'success',
-        razorpayOrderId: `mock_order_${Date.now()}`,
-        razorpayPaymentId: `mock_payment_${Date.now()}`,
-        razorpaySignature: 'mock_signature',
-        paidAt: new Date(),
-        classId: '64a1f5a5e4b0a1b2c3d4e5f6', // Mock ObjectId
+        seminarId: '64a1f5a5e4b0a1b2c3d4e5f6', // Mock ObjectId for testing
       });
       setStatus('success');
     } catch (err) {

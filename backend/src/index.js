@@ -20,10 +20,15 @@ app.get('/health', (req, res) => {
 // Import routes
 const seminarRoutes = require('./routes/seminarRoutes');
 const participantRoutes = require('./routes/participantRoutes');
+const automationRoutes = require('./routes/automationRoutes');
+
+// Import Automation Cron
+const { initCronJobs } = require('./automation/cronJobs');
 
 // Mount routes
 app.use('/api/seminars', seminarRoutes);
 app.use('/api/participants', participantRoutes);
+app.use('/api/automation', automationRoutes);
 
 // Connect to DB and Start Server
 const PORT = process.env.PORT || 5000;
@@ -32,6 +37,10 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hack2s
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
+    
+    // Initialize the Automation Engine
+    initCronJobs();
+
     app.listen(PORT, () => {
       console.log(`🚀 Server started on port ${PORT}`);
     });

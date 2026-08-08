@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Search, MapPin, Phone, Users, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import seminarLeadService from '@/services/seminarLeadService';
+import apiService from '@/services/apiService';
 
 export default function Dashboard() {
   const [leads, setLeads] = useState([]);
@@ -14,7 +14,7 @@ export default function Dashboard() {
 
   const fetchLeads = async () => {
     try {
-      const data = await seminarLeadService.getSeminarLeads();
+      const data = await apiService.getParticipants();
       setLeads(data.data || []);
     } catch (error) {
       console.error("Failed to fetch leads", error);
