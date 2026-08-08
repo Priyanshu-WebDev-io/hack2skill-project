@@ -15,7 +15,7 @@ const automationLogSchema = new mongoose.Schema({
   },
   actionType: {
     type: String,
-    enum: ['email_sent', 'pdf_downloaded', 'seminar_created', 'automation_run', 'zoom_meeting_created'],
+    enum: ['email_sent', 'followup_email_sent', 'pdf_downloaded', 'seminar_created', 'automation_run', 'zoom_meeting_created'],
     required: true
   },
   status: {

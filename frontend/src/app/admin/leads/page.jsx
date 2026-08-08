@@ -1,22 +1,40 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Search, Phone, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Search, Phone, CheckCircle2, Clock, AlertCircle, Calendar, Users, Filter, RefreshCcw } from 'lucide-react';
+import seminarService from '@/services/seminarService';
 import participantService from '@/services/participantService';
 
 export default function LeadsPage() {
+  const [seminars, setSeminars] = useState([]);
+  const [selectedSeminarId, setSelectedSeminarId] = useState('all');
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetchLeads();
+    fetchSeminars();
   }, []);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [selectedSeminarId]);
+
+  const fetchSeminars = async () => {
+    try {
+      const data = await seminarService.getSeminars();
+      const allSeminars = data.data || [];
+      setSeminars(allSeminars.sort((a, b) => new Date(a.date) - new Date(b.date)));
+    } catch (error) {
+      console.error('Failed to fetch seminars', error);
+    }
+  };
 
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const data = await participantService.getParticipants();
+      const filters = selectedSeminarId !== 'all' ? { seminarId: selectedSeminarId } : {};
+      const data = await participantService.getParticipants(filters);
       setLeads(data.data || []);
     } catch (error) {
       console.error("Failed to fetch leads", error);
@@ -48,14 +66,22 @@ export default function LeadsPage() {
     (lead.seminarId?.weekLabel || lead.seminarId?.title || '').toLowerCase().includes(search.toLowerCase())
   );
 
+  const selectedSeminar = selectedSeminarId === 'all'
+    ? null
+    : seminars.find((seminar) => seminar._id === selectedSeminarId);
+
+  const totalLabel = selectedSeminar
+    ? `${filteredLeads.length} lead${filteredLeads.length === 1 ? '' : 's'}`
+    : `${filteredLeads.length} total leads`;
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Seminar Leads</h1>
-          <p className="text-sm text-neutral-500 mt-1">Manage and view all registered attendees.</p>
+          <p className="text-sm text-neutral-500 mt-1">Select a seminar card to view only its registered leads.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <div className="relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
             <input 
@@ -65,10 +91,66 @@ export default function LeadsPage() {
               className="pl-9 pr-4 py-2 bg-neutral-900 border border-white/10 rounded-xl focus:outline-none focus:border-indigo-500 text-sm w-64 text-white placeholder-neutral-600"
             />
           </div>
-          <button onClick={fetchLeads} className="px-4 py-2 bg-white text-black font-semibold text-sm rounded-xl hover:bg-neutral-200 transition-colors">
-            Refresh
+          <button onClick={fetchLeads} className="inline-flex items-center gap-2 px-4 py-2 bg-white text-black font-semibold text-sm rounded-xl hover:bg-neutral-200 transition-colors">
+            <RefreshCcw size={14} /> Refresh
           </button>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-500">
+          <Filter size={13} /> Seminar Cards
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <button
+            onClick={() => setSelectedSeminarId('all')}
+            className={`text-left p-5 rounded-2xl border transition-all ${selectedSeminarId === 'all' ? 'border-indigo-500/40 bg-indigo-500/10 text-white' : 'border-white/10 bg-neutral-900 text-neutral-400 hover:border-white/20 hover:bg-neutral-900/80'}`}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-white">All Seminars</p>
+                <p className="text-xs text-neutral-500 mt-1">View every lead across all cohorts</p>
+              </div>
+              <Users size={18} className="text-indigo-400 shrink-0" />
+            </div>
+          </button>
+
+          {seminars.map((seminar) => {
+            const active = selectedSeminarId === seminar._id;
+            return (
+              <button
+                key={seminar._id}
+                onClick={() => setSelectedSeminarId(seminar._id)}
+                className={`text-left p-5 rounded-2xl border transition-all ${active ? 'border-indigo-500/40 bg-indigo-500/10 text-white' : 'border-white/10 bg-neutral-900 text-neutral-400 hover:border-white/20 hover:bg-neutral-900/80'}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">{seminar.weekLabel || seminar.title}</p>
+                    <p className="text-xs text-neutral-500 mt-1 truncate">{seminar.title}</p>
+                    <p className="text-[11px] text-neutral-600 mt-2 flex items-center gap-1.5">
+                      <Calendar size={12} /> {new Date(seminar.date).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-indigo-300">
+                    Week {seminar.weekNumber}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-sm text-neutral-500">
+        <span>
+          {selectedSeminar ? (
+            <>Showing leads for <span className="text-indigo-300 font-semibold">{selectedSeminar.weekLabel || selectedSeminar.title}</span></>
+          ) : (
+            'Showing leads for all seminars'
+          )}
+        </span>
+        <span>{totalLabel}</span>
       </div>
 
       <div className="bg-neutral-900 border border-white/5 rounded-2xl overflow-hidden">

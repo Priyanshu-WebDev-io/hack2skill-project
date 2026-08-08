@@ -53,6 +53,14 @@ const buildWeeklySeminarSchedule = (baseDate = new Date()) => {
   };
 };
 
+const getCurrentWeekRange = (date = new Date()) => {
+  const weekStart = getMondayStart(date);
+  const weekEnd = getEndOfDay(new Date(weekStart));
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  return { weekStart, weekEnd };
+};
+
 const isEnrollmentOpen = (seminar, now = new Date()) => {
   if (!seminar || seminar.isCompleted) {
     return false;
@@ -67,6 +75,7 @@ const isEnrollmentOpen = (seminar, now = new Date()) => {
 
 module.exports = {
   buildWeeklySeminarSchedule,
+  getCurrentWeekRange,
   getIsoWeekInfo,
   isEnrollmentOpen
 };

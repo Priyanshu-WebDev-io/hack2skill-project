@@ -20,6 +20,28 @@ import AuthModal from '@/components/AuthModal';
 import participantService from '@/services/participantService';
 import seminarService from '@/services/seminarService';
 
+const getRelativeTime = (dateString) => {
+  const diffMs = new Date(dateString) - new Date();
+  const isFuture = diffMs > 0;
+  const absMs = Math.abs(diffMs);
+  
+  const days = Math.floor(absMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(absMs / (1000 * 60 * 60));
+  const mins = Math.floor(absMs / (1000 * 60));
+
+  if (isFuture) {
+    if (days > 0) return `in ${days} day${days > 1 ? 's' : ''}`;
+    if (hours > 0) return `in ${hours} hr${hours > 1 ? 's' : ''}`;
+    if (mins > 0) return `in ${mins} min${mins > 1 ? 's' : ''}`;
+    return 'Starting soon';
+  } else {
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hr${hours > 1 ? 's' : ''} ago`;
+    if (mins > 0) return `${mins} min${mins > 1 ? 's' : ''} ago`;
+    return 'Started';
+  }
+};
+
 export default function Home() {
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -83,7 +105,7 @@ export default function Home() {
         name: user.name,
         email: user.email,
         mobileNumber: user.mobileNumber || '',
-        amount: 500,
+        amount: 0,
         seminarId: seminar._id,
       });
       await fetchRegistrations(user.email);
@@ -191,53 +213,58 @@ export default function Home() {
               <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
                 <Clock size={13} className="text-indigo-400" />
               </div>
-              {new Date(seminar.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST
+              <span>{new Date(seminar.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST</span>
+              <span className="text-[10px] ml-auto font-semibold px-2 py-1 rounded bg-white/10 text-white/80 whitespace-nowrap">
+                {seminar.isCompleted ? 'Ended' : getRelativeTime(seminar.date)}
+              </span>
             </div>
           </div>
 
           {enrolled && (
             <div className="mt-auto space-y-3 pt-4 border-t border-white/5">
-              {seminar.zoomLink ? (
-                <a
-                  href={seminar.zoomLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 transition-colors"
-                >
-                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl shrink-0">
-                    <Video size={18} />
+              {!seminar.isCompleted ? (
+                <>
+                  {seminar.zoomLink ? (
+                    <a
+                      href={seminar.zoomLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 transition-colors"
+                    >
+                      <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl shrink-0">
+                        <Video size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-black mb-0.5">Meeting Link</p>
+                        <p className="text-white font-semibold text-xs truncate">{seminar.zoomLink}</p>
+                      </div>
+                      <span className="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl">
+                        Join
+                      </span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 text-neutral-500 text-sm italic">
+                      <Video size={16} className="shrink-0" />
+                      Link will be shared soon
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${registration?.attendanceStatus === 'attended' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'}`}>
+                      {registration?.attendanceStatus === 'attended' ? 'Attended' : 'Pending Attendance'}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-black mb-0.5">Meeting Link</p>
-                    <p className="text-white font-semibold text-xs truncate">{seminar.zoomLink}</p>
-                  </div>
-                  <span className="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl">
-                    Join
-                  </span>
-                </a>
+                </>
               ) : (
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 text-neutral-500 text-sm italic">
-                  <Video size={16} className="shrink-0" />
-                  Link will be shared soon
-                </div>
+                <button
+                  onClick={() => handleDownload(registration)}
+                  disabled={downloading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black text-sm font-bold rounded-2xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                >
+                  <Download size={16} />
+                  {downloading ? 'Downloading...' : 'Download Certificate'}
+                </button>
               )}
-
-              <div className="flex items-center gap-3">
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${registration?.attendanceStatus === 'attended' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'}`}>
-                  {registration?.attendanceStatus === 'attended' ? 'Attended' : 'Pending Attendance'}
-                </span>
-
-                {seminar.isCompleted && registration?.attendanceStatus === 'attended' && (
-                  <button
-                    onClick={() => handleDownload(registration)}
-                    disabled={downloading}
-                    className="flex items-center gap-2 px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
-                  >
-                    <Download size={14} />
-                    {downloading ? 'Downloading...' : 'Download Certificate'}
-                  </button>
-                )}
-              </div>
             </div>
           )}
 
@@ -256,7 +283,7 @@ export default function Home() {
                 ) : (
                   <>
                     <CheckCircle2 size={16} />
-                    Enroll Now
+                    Enroll Now — Free
                   </>
                 )}
               </button>

@@ -26,6 +26,7 @@ const seedAdmin = require('./seedAdmin');
 
 // Import Automation Cron
 const { initCronJobs } = require('./automation/cronJobs');
+const { runAutomationCycle } = require('./automation/seminarAutomation');
 
 // Mount routes
 app.use('/api/seminars', seminarRoutes);
@@ -48,6 +49,9 @@ mongoose.connect(MONGODB_URI)
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       initCronJobs();
+      runAutomationCycle('startup').catch(err => {
+        console.error('[Startup] Automation cycle failed:', err);
+      });
     });
   })
   .catch(err => {

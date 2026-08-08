@@ -71,6 +71,41 @@ const sendZoomLinkEmail = async (participant, seminar) => {
   }
 };
 
+const sendWeeklyFollowUpEmail = async (participant, seminar) => {
+  try {
+    if (!transporter) await initTransporter();
+
+    const seminarName = seminar.weekLabel || seminar.title;
+    const joinHref = seminar.zoomLink || '#';
+    const mailOptions = {
+      from: '"Seminar Autopilot" <noreply@seminar.com>',
+      to: participant.email,
+      subject: `Reminder: ${seminarName} is happening this week`,
+      text: `Hi ${participant.name},\n\nThis is your daily reminder for ${seminarName}.\nSeminar date: ${new Date(seminar.date).toDateString()}\nJoin here: ${seminar.zoomLink || 'Link will be shared soon'}\n\nSee you there!`,
+      html: `<p>Hi ${participant.name},</p><p>This is your daily reminder for <b>${seminarName}</b>.</p><p>Seminar date: <b>${new Date(seminar.date).toDateString()}</b></p><p>Join here: <a href="${joinHref}">${seminar.zoomLink || 'Link will be shared soon'}</a></p><p>See you there!</p>`
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Mailer] Follow-up email sent to ${participant.email}: %s`, info.messageId);
+
+    await logAction(
+      participant._id,
+      'followup_email_sent',
+      'success',
+      `Sent daily follow-up for ${seminarName}`,
+      { seminarId: seminar._id }
+    );
+
+    return true;
+  } catch (error) {
+    console.error('[Mailer] Error sending follow-up email:', error);
+    await logAction(participant._id, 'followup_email_sent', 'failed', error.message, {
+      seminarId: seminar?._id || null
+    });
+    return false;
+  }
+};
+
 const sendOtpEmail = async (user, otpCode) => {
   try {
     if (!transporter) await initTransporter();
@@ -102,4 +137,4 @@ const sendOtpEmail = async (user, otpCode) => {
   }
 };
 
-module.exports = { sendZoomLinkEmail, sendOtpEmail };
+module.exports = { sendZoomLinkEmail, sendWeeklyFollowUpEmail, sendOtpEmail };

@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const { runAutomationCycle } = require('./seminarAutomation');
 
 const initCronJobs = () => {
-  const cronSchedule = process.env.AUTOMATION_CRON_SCHEDULE || '* * * * *';
+  const cronSchedule = process.env.AUTOMATION_CRON_SCHEDULE || '0 9 * * *';
 
   cron.schedule(cronSchedule, async () => {
     console.log('[Cron] Running scheduled automation check...');

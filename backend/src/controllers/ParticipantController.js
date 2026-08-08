@@ -71,7 +71,7 @@ exports.markAttendance = async (req, res) => {
 
 exports.getParticipants = async (req, res) => {
   try {
-    const { search, weekNumber, status } = req.query;
+    const { search, weekNumber, status, seminarId } = req.query;
     
     let query = {};
     
@@ -84,6 +84,10 @@ exports.getParticipants = async (req, res) => {
     
     if (status) {
       query.attendanceStatus = status; // e.g. 'attended' or 'not_joined'
+    }
+
+    if (seminarId) {
+      query.seminarId = seminarId;
     }
 
     // Populate seminarId to filter by weekNumber if needed

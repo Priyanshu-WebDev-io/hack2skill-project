@@ -164,7 +164,7 @@ export default function SeminarsPage() {
     setMarkingId(id);
     try {
       await seminarService.markCompleted(id);
-      fetchSeminars();
+      await fetchSeminars();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to mark as completed.');
     } finally {

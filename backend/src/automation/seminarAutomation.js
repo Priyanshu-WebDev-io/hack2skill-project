@@ -1,9 +1,9 @@
 const Seminar = require('../models/Seminar');
 const Participant = require('../models/Participant');
 const AutomationLog = require('../models/AutomationLog');
-const { sendZoomLinkEmail } = require('./mailer');
+const { sendWeeklyFollowUpEmail } = require('./mailer');
 const { logAction } = require('./actionLogger');
-const { buildWeeklySeminarSchedule, isEnrollmentOpen } = require('../utils/weekSchedule');
+const { buildWeeklySeminarSchedule, getCurrentWeekRange, isEnrollmentOpen } = require('../utils/weekSchedule');
 const {
   isZoomConfigured,
   getConfiguredDefaultZoomLink,
@@ -177,26 +177,29 @@ const repairPlaceholderSeminarLinks = async () => {
   return repairedCount;
 };
 
-const processPendingEmails = async () => {
+const processCurrentWeekFollowUpEmails = async () => {
   const now = new Date();
-  const upcomingSeminars = await Seminar.find({
-    isCompleted: false,
-    date: { $gte: now }
+  const { weekStart, weekEnd } = getCurrentWeekRange(now);
+
+  const currentWeekSeminars = await Seminar.find({
+    date: { $gte: weekStart, $lte: weekEnd }
   });
 
   let emailsSent = 0;
   let emailsSkipped = 0;
 
-  for (const seminar of upcomingSeminars) {
+  for (const seminar of currentWeekSeminars) {
     await syncSeminarState(seminar, now);
     const participants = await Participant.find({ seminarId: seminar._id });
+    const runDateKey = now.toISOString().slice(0, 10);
 
     for (const participant of participants) {
       const existingLog = await AutomationLog.findOne({
         participantId: participant._id,
         seminarId: seminar._id,
-        actionType: 'email_sent',
-        status: 'success'
+        actionType: 'followup_email_sent',
+        status: 'success',
+        details: runDateKey
       });
 
       if (existingLog) {
@@ -204,7 +207,7 @@ const processPendingEmails = async () => {
         continue;
       }
 
-      const sent = await sendZoomLinkEmail(participant, seminar);
+      const sent = await sendWeeklyFollowUpEmail(participant, seminar);
       if (sent) {
         emailsSent += 1;
       }
@@ -214,7 +217,7 @@ const processPendingEmails = async () => {
   return {
     emailsSent,
     emailsSkipped,
-    seminarsChecked: upcomingSeminars.length
+    seminarsChecked: currentWeekSeminars.length
   };
 };
 
@@ -233,13 +236,13 @@ const runAutomationCycle = async (source = 'cron') => {
 
   const repairedLinks = await repairPlaceholderSeminarLinks();
 
-  const emailResult = await processPendingEmails();
+  const emailResult = await processCurrentWeekFollowUpEmails();
 
   await logAction(
     null,
     'automation_run',
     'success',
-    `Automation run via ${source}. Seminar created: ${seminarResult.created}. Repaired links: ${repairedLinks}. Emails sent: ${emailResult.emailsSent}`,
+    `Automation run via ${source}. Seminar created: ${seminarResult.created}. Repaired links: ${repairedLinks}. Follow-up emails sent: ${emailResult.emailsSent}`,
     { seminarId: seminarResult.seminar?._id || null }
   );
 
@@ -258,6 +261,6 @@ const runAutomationCycle = async (source = 'cron') => {
 
 module.exports = {
   ensureCurrentWeekSeminar,
-  processPendingEmails,
+  processCurrentWeekFollowUpEmails,
   runAutomationCycle
 };

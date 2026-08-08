@@ -16,9 +16,7 @@ exports.generateCertificate = async (req, res) => {
     const seminar = participant.seminarId;
 
     // Validation
-    if (participant.attendanceStatus !== 'attended') {
-      return res.status(400).json({ success: false, message: 'Participant has not attended the seminar.' });
-    }
+    // Removed attendance check as per user request (only requires seminar completion)
     if (!seminar.isCompleted) {
       return res.status(400).json({ success: false, message: 'Seminar is not marked as completed yet.' });
     }
