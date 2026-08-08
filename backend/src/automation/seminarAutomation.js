@@ -24,7 +24,7 @@ const {
 } = require('./zoomService');
 const { getRandomTopic } = require('../utils/pseudoAiTopics');
 
-const getAutoZoomLink = async (schedule, force = false) => {
+const getAutoZoomLink = async (schedule, _force = false) => {
   const fallbackLink = getConfiguredDefaultZoomLink();
 
   if (isZoomConfigured()) {

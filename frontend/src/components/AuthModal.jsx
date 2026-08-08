@@ -112,9 +112,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
       <div className="relative bg-neutral-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <button 
           onClick={onClose}
+          aria-label="Close authentication modal"
           className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
         >
-          <X size={20} />
+          <X size={20} aria-hidden="true" />
         </button>
 
         {otpView ? (
@@ -126,12 +127,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="space-y-1.5 text-left">
-                <label className="text-xs font-medium text-neutral-300">Authentication Code</label>
+                <label htmlFor="otp" className="text-xs font-medium text-neutral-300">Authentication Code</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                    <Lock size={16} />
+                    <Lock size={16} aria-hidden="true" />
                   </div>
                   <input
+                    id="otp"
                     required
                     type="text"
                     maxLength={6}
@@ -139,12 +141,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                     onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
                     className="w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-center tracking-[1em] text-lg font-mono"
                     placeholder="000000"
+                    aria-required="true"
                   />
                 </div>
               </div>
 
               {error && (
-                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <div aria-live="polite" className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
                   {error}
                 </div>
               )}
@@ -152,6 +155,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
+                aria-disabled={loading || otp.length !== 6}
+                aria-busy={loading}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-70 mt-4"
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
@@ -183,37 +188,41 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           {!isLogin && (
             <>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-neutral-300">Full Name</label>
+                <label htmlFor="fullName" className="text-xs font-medium text-neutral-300">Full Name</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                    <User size={16} />
+                    <User size={16} aria-hidden="true" />
                   </div>
                   <input
+                    id="fullName"
                     required
                     type="text"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                     className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
                     placeholder="John Doe"
+                    aria-required="true"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-neutral-300">Mobile Number</label>
+                <label htmlFor="mobileNumber" className="text-xs font-medium text-neutral-300">Mobile Number</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
                   </div>
                   <input
+                    id="mobileNumber"
                     required
                     type="tel"
                     value={formData.mobileNumber}
                     onChange={e => setFormData({...formData, mobileNumber: e.target.value})}
                     className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
                     placeholder="10-digit number"
+                    aria-required="true"
                   />
                 </div>
               </div>
@@ -221,41 +230,45 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           )}
           
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-neutral-300">Email Address</label>
+            <label htmlFor="email" className="text-xs font-medium text-neutral-300">Email Address</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                <Mail size={16} />
+                <Mail size={16} aria-hidden="true" />
               </div>
               <input
+                id="email"
                 required
                 type="email"
                 value={formData.email}
                 onChange={e => setFormData({...formData, email: e.target.value})}
                 className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
                 placeholder="john@example.com"
+                aria-required="true"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-neutral-300">Password</label>
+            <label htmlFor="password" className="text-xs font-medium text-neutral-300">Password</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                <Lock size={16} />
+                <Lock size={16} aria-hidden="true" />
               </div>
               <input
+                id="password"
                 required
                 type="password"
                 value={formData.password}
                 onChange={e => setFormData({...formData, password: e.target.value})}
                 className="w-full pl-10 pr-4 py-2.5 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-sm"
                 placeholder="••••••••"
+                aria-required="true"
               />
             </div>
           </div>
 
           {error && (
-            <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <div aria-live="polite" className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
               {error}
             </div>
           )}
@@ -263,12 +276,14 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           <button
             type="submit"
             disabled={loading}
+            aria-disabled={loading}
+            aria-busy={loading}
             className="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-70 mt-2"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" aria-hidden="true" />
             ) : (
-              <>{isLogin ? 'Sign In' : 'Sign Up'} <ArrowRight size={16} /></>
+              <>{isLogin ? 'Sign In' : 'Sign Up'} <ArrowRight size={16} aria-hidden="true" /></>
             )}
           </button>
         </form>

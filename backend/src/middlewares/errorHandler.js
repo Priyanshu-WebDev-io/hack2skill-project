@@ -6,7 +6,7 @@
  * - CODE QUALITY: Centralizes error processing instead of failing silently or leaking stack traces.
  */
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   console.error('[Global Error]', err.stack);
   
   // Clean error response for production/AI agents

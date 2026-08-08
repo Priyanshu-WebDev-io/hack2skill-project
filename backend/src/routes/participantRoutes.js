@@ -9,7 +9,9 @@ router.post('/register', participantController.registerParticipant);
 
 // Admin Only
 router.post('/:id/attendance', requireAuth, requireAdmin, participantController.markAttendance);
-router.get('/', requireAuth, requireAdmin, participantController.getParticipants);
+
+// Authenticated User & Admin
+router.get('/', requireAuth, participantController.getParticipants);
 
 // Authenticated User
 router.get('/:id/certificate', requireAuth, certificateController.generateCertificate);

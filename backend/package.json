@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint \"src/**/*.js\""
   },
   "keywords": [],
   "author": "",
@@ -29,5 +30,10 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.5",
     "pdfkit": "^0.19.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
+    "eslint-plugin-node": "^11.1.0"
   }
 }

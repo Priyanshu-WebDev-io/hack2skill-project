@@ -90,7 +90,10 @@ exports.getParticipants = async (req, res) => {
     
     let query = {};
     
-    if (search) {
+    // RBAC: Non-admin users can ONLY see their own records
+    if (req.user && req.user.role !== 'admin') {
+      query.email = req.user.email;
+    } else if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } }
