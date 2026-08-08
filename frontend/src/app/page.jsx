@@ -123,59 +123,56 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-                <div className="space-y-1 mb-6">
-                  <h3 className="text-2xl font-bold text-text-primary">Reserve Your Seat</h3>
-                  <p className="text-sm text-text-secondary">Fill in your details below.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5 col-span-2">
-                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Full Name</label>
-                    <input required name="name" value={formData.name} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-text-primary placeholder-text-tertiary" placeholder="John Doe" />
-                  </div>
-                  
-                  <div className="space-y-1.5 col-span-2">
-                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Email Address</label>
-                    <input required type="email" name="email" value={formData.email} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-text-primary placeholder-text-tertiary" placeholder="john@example.com" />
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Mobile</label>
-                    <input required name="mobileNumber" value={formData.mobileNumber} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-text-primary placeholder-text-tertiary" placeholder="10-digit number" />
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Occupation</label>
-                    <input required name="currentOccupation" value={formData.currentOccupation} onChange={handleChange}
-                      className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all text-text-primary placeholder-text-tertiary" placeholder="Student, Engineer..." />
-                  </div>
+              <div className="space-y-5 relative z-10 py-6">
+                <div className="space-y-1 mb-8 text-center">
+                  <h3 className="text-3xl font-bold text-text-primary">Reserve Your Seat</h3>
+                  <p className="text-sm text-text-secondary">
+                    {user ? `Welcome back, ${user.name.split(' ')[0]}!` : "Authenticate to continue"}
+                  </p>
                 </div>
 
                 {errorMsg && (
-                  <div className="p-3 rounded-lg bg-error-500/10 border border-error-500/20 text-error-400 text-sm">
+                  <div className="p-3 rounded-lg bg-error-500/10 border border-error-500/20 text-error-400 text-sm mb-4">
                     {errorMsg}
                   </div>
                 )}
 
-                <button 
-                  disabled={status === 'loading'}
-                  type="submit" 
-                  className="w-full py-3.5 px-6 rounded-xl bg-white text-black font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 mt-4 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {status === 'loading' ? (
-                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span>Pay ₹500 & Register</span>
+                {!user ? (
+                  <div className="flex flex-col gap-4">
+                    <p className="text-center text-text-secondary mb-4">You must be signed in to register for this exclusive masterclass.</p>
+                    <button 
+                      onClick={() => setIsAuthModalOpen(true)}
+                      className="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(79,70,229,0.2)] hover:shadow-[0_0_60px_rgba(79,70,229,0.3)]"
+                    >
+                      Sign In to Register
                       <ArrowRight size={18} />
-                    </>
-                  )}
-                </button>
-              </form>
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-1 mb-4">
+                      <span className="text-xs text-text-secondary uppercase tracking-wider">Registering As</span>
+                      <span className="font-medium text-white">{user.name}</span>
+                      <span className="text-sm text-neutral-400">{user.email}</span>
+                    </div>
+
+                    <button 
+                      disabled={status === 'loading'}
+                      type="submit" 
+                      className="w-full py-4 px-6 rounded-xl bg-white text-black font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {status === 'loading' ? (
+                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span>Pay ₹500 & Enroll Now</span>
+                          <ArrowRight size={18} />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
             )}
           </div>
         </div>

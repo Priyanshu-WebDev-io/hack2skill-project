@@ -22,6 +22,7 @@ const seminarRoutes = require('./routes/seminarRoutes');
 const participantRoutes = require('./routes/participantRoutes');
 const automationRoutes = require('./routes/automationRoutes');
 const authRoutes = require('./routes/authRoutes');
+const seedAdmin = require('./seedAdmin');
 
 // Import Automation Cron
 const { initCronJobs } = require('./automation/cronJobs');
@@ -38,16 +39,14 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI)
   .then(() => {
-    console.log('✅ MongoDB connected');
-    
-    // Initialize the Automation Engine
-    initCronJobs();
-
+    console.log('Connected to MongoDB');
+    seedAdmin(); // Run seed after DB connects
     app.listen(PORT, () => {
-      console.log(`🚀 Server started on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
+      initCronJobs();
     });
   })
   .catch(err => {
-    console.error('❌ Failed to connect to MongoDB', err);
+    console.error('MongoDB connection error:', err);
     process.exit(1);
   });
