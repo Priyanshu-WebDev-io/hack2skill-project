@@ -35,6 +35,12 @@ const apiService = {
     return response.data;
   },
 
+  // Automation Logs
+  getAutomationLogs: async () => {
+    const response = await api.get('/automation/logs');
+    return response.data;
+  },
+
   // Certificates & Logs
   downloadCertificate: async (id) => {
     const response = await api.get(`/participants/${id}/certificate`, {
