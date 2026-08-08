@@ -64,9 +64,40 @@ const getZoomAccessToken = async () => {
   return accessToken;
 };
 
+// Cache the resolved real user ID (Server-to-Server OAuth doesn't support 'me')
+let resolvedZoomUserIdCache = null;
+
+const resolveZoomUserId = async (token) => {
+  const configured = String(process.env.ZOOM_USER_ID || '').trim();
+
+  // If a real user ID or email is explicitly set (not 'me'), use it directly
+  if (configured && configured !== 'me') {
+    return configured;
+  }
+
+  // Return cached value if we already resolved it
+  if (resolvedZoomUserIdCache) {
+    return resolvedZoomUserIdCache;
+  }
+
+  // Auto-discover the first user in the account
+  const usersResponse = await axios.get('https://api.zoom.us/v2/users?page_size=1&status=active', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const users = usersResponse.data?.users || [];
+  if (!users.length) {
+    throw new Error('No active Zoom users found in account. Set ZOOM_USER_ID in .env to your Zoom email.');
+  }
+
+  resolvedZoomUserIdCache = users[0].id || users[0].email;
+  console.log(`[Zoom] Auto-resolved user ID: ${resolvedZoomUserIdCache}`);
+  return resolvedZoomUserIdCache;
+};
+
 const createZoomMeetingForSeminar = async ({ topic, startTime, durationMinutes = 90 }) => {
   const token = await getZoomAccessToken();
-  const zoomUserId = process.env.ZOOM_USER_ID || 'me';
+  const zoomUserId = await resolveZoomUserId(token);
   const timezone = process.env.ZOOM_TIMEZONE || 'Asia/Kolkata';
 
   const response = await axios.post(

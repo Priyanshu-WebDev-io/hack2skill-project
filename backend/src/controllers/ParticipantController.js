@@ -4,15 +4,19 @@ const { isEnrollmentOpen } = require('../utils/weekSchedule');
 
 exports.registerParticipant = async (req, res) => {
   try {
-    const { name, email, mobileNumber } = req.body;
+    const { name, email, mobileNumber, seminarId: requestedSeminarId } = req.body;
     const now = new Date();
-    
-    const activeSeminar = await Seminar.findOne({
+
+    const activeQuery = {
       isCompleted: false,
       registrationStartDate: { $lte: now },
       registrationEndDate: { $gte: now }
-    }).sort({ seminarYear: -1, weekNumber: -1 });
-    
+    };
+
+    const activeSeminar = requestedSeminarId
+      ? await Seminar.findOne({ _id: requestedSeminarId, ...activeQuery })
+      : await Seminar.findOne(activeQuery).sort({ seminarYear: -1, weekNumber: -1, createdAt: -1 });
+
     if (!activeSeminar || !isEnrollmentOpen(activeSeminar, now)) {
       return res.status(400).json({
         success: false,

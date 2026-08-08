@@ -1,295 +1,375 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ArrowRight, CheckCircle2, Shield, Zap, Target, Sparkles, Calendar, Clock, MapPin, Video, Download } from "lucide-react";
-import participantService from "@/services/participantService";
-import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/Navbar";
-import AuthModal from "@/components/AuthModal";
+import { useEffect, useState } from 'react';
+import {
+  ArrowRight,
+  AlertCircle,
+  BadgeCheck,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Download,
+  MapPin,
+  Sparkles,
+  Users,
+  Video,
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import Navbar from '@/components/Navbar';
+import AuthModal from '@/components/AuthModal';
+import participantService from '@/services/participantService';
+import seminarService from '@/services/seminarService';
 
 export default function Home() {
   const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    mobileNumber: "",
-    currentOccupation: '',
-    highestQualification: '',
-  });
-  
-  const [status, setStatus] = useState('idle'); // idle, loading, success, error, enrolled
-  const [errorMsg, setErrorMsg] = useState('');
-  const [participant, setParticipant] = useState(null);
-  const [downloading, setDownloading] = useState(false);
+  const [seminars, setSeminars] = useState([]);
+  const [myRegistrations, setMyRegistrations] = useState({});
+  const [enrollingId, setEnrollingId] = useState(null);
+  const [enrollError, setEnrollError] = useState('');
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  useEffect(() => {
+    fetchSeminars();
+  }, []);
 
   useEffect(() => {
     if (user?.email) {
-      fetchParticipantByEmail(user.email);
+      fetchRegistrations(user.email);
+    } else {
+      setMyRegistrations({});
     }
   }, [user]);
 
-  const fetchParticipantByEmail = async (email) => {
+  const fetchSeminars = async () => {
+    try {
+      const res = await seminarService.getSeminars();
+      setSeminars((res.data || []).sort((a, b) => new Date(a.date) - new Date(b.date)));
+    } catch (err) {
+      console.error('Failed to fetch seminars', err);
+    }
+  };
+
+  const fetchRegistrations = async (email) => {
     try {
       const res = await participantService.getParticipants({ search: email });
-      const exactMatches = (res.data || []).filter(p => p.email.toLowerCase() === email.toLowerCase());
-      if (exactMatches.length > 0) {
-        setParticipant(exactMatches[exactMatches.length - 1]);
-        setStatus('enrolled');
-      }
+      const exactMatches = (res.data || []).filter((participant) => participant.email?.toLowerCase() === email.toLowerCase());
+      const mapped = {};
+
+      exactMatches.forEach((participant) => {
+        const seminarId = participant.seminarId?._id || participant.seminarId;
+        if (seminarId) {
+          mapped[String(seminarId)] = participant;
+        }
+      });
+
+      setMyRegistrations(mapped);
     } catch (err) {
-      console.error("Failed to fetch participant details", err);
+      console.error('Failed to fetch participant registrations', err);
     }
   };
 
-  const handleDownload = async () => {
-    if (!participant) return;
-    try {
-      setDownloading(true);
-      const blob = await participantService.downloadCertificate(participant._id);
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${participant.name.replace(/\\s+/g, '_')}_Certificate.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (err) {
-      alert('Failed to download certificate. Ensure you have attended the seminar and it is marked completed.');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Intercept if not logged in
+  const handleEnroll = async (seminar) => {
     if (!user) {
       setIsAuthModalOpen(true);
       return;
     }
 
-    setStatus('loading');
-    setErrorMsg('');
-    
+    setEnrollingId(seminar._id);
+    setEnrollError('');
+
     try {
       await participantService.registerParticipant({
-        ...formData,
-        name: user.name || formData.name, // Pre-fill from user context if available
-        email: user.email || formData.email,
-        amount: 500, // example amount
-        seminarId: process.env.NEXT_PUBLIC_DEFAULT_SEMINAR_ID,
+        name: user.name,
+        email: user.email,
+        mobileNumber: user.mobileNumber || '',
+        amount: 500,
+        seminarId: seminar._id,
       });
-      setStatus('success');
+      await fetchRegistrations(user.email);
     } catch (err) {
-      console.error(err);
-      setStatus('error');
-      setErrorMsg(err.response?.data?.message || err.message || 'An error occurred');
+      setEnrollError(err.response?.data?.message || err.message || 'Enrollment failed.');
+    } finally {
+      setEnrollingId(null);
     }
+  };
+
+  const handleDownload = async (participantRecord) => {
+    if (!participantRecord) return;
+
+    try {
+      setDownloadingId(participantRecord._id);
+      const blob = await participantService.downloadCertificate(participantRecord._id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${participantRecord.name.replace(/\s+/g, '_')}_Certificate.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch {
+      alert('Certificate not available yet. Attend the seminar first.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const groupedSeminars = seminars.reduce((groups, seminar) => {
+    const label = seminar.weekLabel || `Week ${seminar.weekNumber}`;
+    if (!groups[label]) {
+      groups[label] = [];
+    }
+    groups[label].push(seminar);
+    return groups;
+  }, {});
+
+  const seminarGroups = Object.entries(groupedSeminars)
+    .map(([weekLabel, weekSeminars]) => ({
+      weekLabel,
+      weekSeminars: weekSeminars.sort((a, b) => new Date(a.date) - new Date(b.date)),
+      sortDate: new Date(weekSeminars[0]?.date || 0),
+    }))
+    .sort((a, b) => a.sortDate - b.sortDate);
+
+  const renderCard = (seminar) => {
+    const registration = myRegistrations[String(seminar._id)];
+    const enrolled = Boolean(registration);
+    const loading = enrollingId === seminar._id;
+    const downloading = downloadingId === registration?._id;
+
+    return (
+      <div
+        key={seminar._id}
+        className={`relative flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 ${
+          enrolled
+            ? 'border-indigo-500/40 bg-linear-to-br from-indigo-950/60 to-neutral-900/80 shadow-[0_0_40px_rgba(99,102,241,0.08)]'
+            : seminar.isCompleted
+            ? 'border-white/5 bg-neutral-950/60 opacity-50'
+            : 'border-white/10 bg-neutral-900/60 hover:border-white/20 hover:bg-neutral-900/80'
+        }`}
+      >
+        <div className={`h-1 w-full ${enrolled ? 'bg-linear-to-r from-indigo-500 to-violet-500' : seminar.isCompleted ? 'bg-neutral-800' : 'bg-linear-to-r from-white/10 to-white/5'}`} />
+
+        <div className="p-6 flex flex-col gap-5 flex-1">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                {seminar.weekLabel || `Week ${seminar.weekNumber}`}
+              </span>
+              {enrolled && (
+                <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  <BadgeCheck size={10} /> Enrolled
+                </span>
+              )}
+              {seminar.isCompleted && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-700">
+                  Completed
+                </span>
+              )}
+              {!seminar.isCompleted && seminar.registrationOpen && !enrolled && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  ● Open
+                </span>
+              )}
+            </div>
+            <h3 className="text-lg font-bold text-white">{seminar.title}</h3>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 text-sm text-neutral-400">
+              <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
+                <Calendar size={13} className="text-indigo-400" />
+              </div>
+              {new Date(seminar.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </div>
+            <div className="flex items-center gap-3 text-sm text-neutral-400">
+              <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
+                <Clock size={13} className="text-indigo-400" />
+              </div>
+              {new Date(seminar.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST
+            </div>
+          </div>
+
+          {enrolled && (
+            <div className="mt-auto space-y-3 pt-4 border-t border-white/5">
+              {seminar.zoomLink ? (
+                <a
+                  href={seminar.zoomLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-blue-600/10 border border-blue-500/20 hover:bg-blue-600/20 transition-colors"
+                >
+                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl shrink-0">
+                    <Video size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-black mb-0.5">Meeting Link</p>
+                    <p className="text-white font-semibold text-xs truncate">{seminar.zoomLink}</p>
+                  </div>
+                  <span className="shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl">
+                    Join
+                  </span>
+                </a>
+              ) : (
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5 text-neutral-500 text-sm italic">
+                  <Video size={16} className="shrink-0" />
+                  Link will be shared soon
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${registration?.attendanceStatus === 'attended' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'}`}>
+                  {registration?.attendanceStatus === 'attended' ? 'Attended' : 'Pending Attendance'}
+                </span>
+
+                {seminar.isCompleted && registration?.attendanceStatus === 'attended' && (
+                  <button
+                    onClick={() => handleDownload(registration)}
+                    disabled={downloading}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-black text-xs font-bold rounded-xl hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                  >
+                    <Download size={14} />
+                    {downloading ? 'Downloading...' : 'Download Certificate'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!enrolled && !seminar.isCompleted && (
+            <div className="mt-auto pt-4 border-t border-white/5">
+              <button
+                onClick={() => handleEnroll(seminar)}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white text-black font-bold hover:bg-neutral-200 transition-all disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                    Enrolling...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} />
+                    Enroll Now
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-indigo-500/30">
       <Navbar onAuthClick={() => setIsAuthModalOpen(true)} />
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)} 
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
         onSuccess={() => {
-          console.log("Auth success");
+          if (user?.email) {
+            fetchRegistrations(user.email);
+          }
         }}
       />
-      
-      {/* Background Effects */}
+
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b')] bg-cover bg-center opacity-10 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/80 to-black pointer-events-none" />
-      
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 min-h-screen flex flex-col lg:flex-row items-center gap-16">
-        
-        {/* Left Side: Copy */}
-        <div className="flex-1 space-y-8 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-400 text-sm font-medium">
+      <div className="absolute inset-0 bg-linear-to-b from-black via-black/80 to-black pointer-events-none" />
+
+      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 min-h-screen space-y-16">
+        <div className="text-center space-y-5 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium">
             <Sparkles size={16} />
-            <span>Upcoming Masterclass</span>
+            <span>Weekly Masterclass Series</span>
           </div>
-          
-          <h1 className="text-5xl lg:text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-white/50">
-            Elevate Your <br className="hidden lg:block"/> Career Trajectory.
+
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-br from-white via-white to-white/50">
+            Elevate Your Career.
           </h1>
-          
-          <p className="text-lg text-text-secondary max-w-xl leading-relaxed">
-            Join our exclusive seminar to learn advanced tech skills, industry insights, and network with leading professionals. 
-            Limited seats available.
+
+          <p className="text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+            Explore every seminar in card form, choose the one you want, and enroll directly in that session.
           </p>
-          
-          <div className="grid sm:grid-cols-2 gap-6 pt-4">
+
+          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-4">
             {[
-              { icon: Calendar, text: "October 15, 2026" },
-              { icon: Clock, text: "10:00 AM - 02:00 PM" },
-              { icon: MapPin, text: "Tech Hub, Virtual" },
-              { icon: Sparkles, text: "Certificate Included" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 text-text-secondary">
-                <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-primary-400">
-                  <item.icon size={20} />
+              { icon: Calendar, text: 'Every week', sub: 'Multiple seminars can appear in the same week' },
+              { icon: Clock, text: 'Mon-Sat enrollment', sub: 'Sunday sessions with automatic Zoom links' },
+              { icon: MapPin, text: 'Flexible cohorts', sub: 'Enroll in the seminar you want' },
+              { icon: Sparkles, text: 'Certificate Included', sub: 'After attendance and completion' },
+            ].map((item, index) => (
+              <div key={index} className="flex items-start gap-3 text-left p-4 rounded-2xl bg-white/5 border border-white/10">
+                <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-indigo-400">
+                  <item.icon size={18} />
                 </div>
-                <span className="font-medium">{item.text}</span>
+                <div>
+                  <p className="font-semibold text-white">{item.text}</p>
+                  <p className="text-xs text-neutral-500 mt-1">{item.sub}</p>
+                </div>
               </div>
             ))}
           </div>
+
+          {!user && (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="inline-flex items-center gap-2 mt-2 px-8 py-3.5 rounded-2xl bg-white text-black font-bold hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]"
+            >
+              Sign In to Enroll <ArrowRight size={18} />
+            </button>
+          )}
         </div>
 
-        {/* Right Side: Registration Form */}
-        <div className="w-full max-w-md z-10">
-          <div className="bg-surface/50 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
-            {/* Subtle gradient hover effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-secondary-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-            
-            {status === 'enrolled' && participant ? (
-              <div className="space-y-6 relative z-10 py-2">
-                <div className="space-y-1 mb-6 text-center">
-                  <h3 className="text-2xl font-bold text-text-primary">Welcome, {user.name.split(' ')[0]}!</h3>
-                  <p className="text-sm text-text-secondary">
-                    You are already enrolled. Here are your details.
-                  </p>
-                </div>
-                
-                {/* Seminar Details */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4 shadow-inner">
-                  <div>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 mb-3">
-                      Week {participant.seminarId?.weekNumber} Cohort
-                    </div>
-                    <h2 className="text-lg font-bold text-white leading-tight">{participant.seminarId?.title}</h2>
-                  </div>
-
-                  <div className="flex flex-col gap-3 pt-2">
-                    <div className="flex items-center gap-3 text-neutral-400 text-sm font-medium">
-                      <Calendar size={16} className="text-indigo-400" />
-                      <span>{new Date(participant.seminarId?.date).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-neutral-400 text-sm font-medium">
-                      <Clock size={16} className="text-indigo-400" />
-                      <span>{new Date(participant.seminarId?.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Zoom Link Section */}
-                <div className="pt-2">
-                  <h3 className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Meeting Details</h3>
-                  {participant.seminarId?.zoomLink ? (
-                    <div className="flex items-center gap-3 bg-black/40 p-3 rounded-xl border border-white/5">
-                      <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg shrink-0">
-                        <Video size={20} />
-                      </div>
-                      <div className="flex-1 overflow-hidden min-w-0">
-                        <p className="text-white font-medium text-sm truncate">{participant.seminarId.zoomLink}</p>
-                      </div>
-                      <a href={participant.seminarId.zoomLink} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition-colors shrink-0 shadow-lg shadow-blue-900/20">
-                        Join
-                      </a>
-                    </div>
-                  ) : (
-                    <p className="text-neutral-500 text-sm italic bg-black/20 p-3 rounded-xl border border-white/5">Zoom link will be sent shortly before start.</p>
-                  )}
-                </div>
-
-                {/* Certificate Section */}
-                <div className="pt-2">
-                  <h3 className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest mb-3">Certificate</h3>
-                  <button 
-                    onClick={handleDownload}
-                    disabled={!(participant.attendanceStatus === 'attended' && participant.seminarId?.isCompleted) || downloading}
-                    className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
-                      (participant.attendanceStatus === 'attended' && participant.seminarId?.isCompleted)
-                        ? 'bg-white text-black hover:bg-neutral-200' 
-                        : 'bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-none'
-                    }`}
-                  >
-                    {downloading ? (
-                      <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Download size={18} />
-                        {(participant.attendanceStatus === 'attended' && participant.seminarId?.isCompleted) ? 'Download PDF' : 'Locked until completion'}
-                      </>
-                    )}
-                  </button>
-                </div>
-
-              </div>
-            ) : status === 'success' ? (
-              <div className="py-12 text-center space-y-4 animate-in fade-in zoom-in duration-500">
-                <div className="w-16 h-16 bg-success-500/20 text-success-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                  <CheckCircle2 size={32} />
-                </div>
-                <h3 className="text-2xl font-bold text-text-primary">Registration Complete!</h3>
-                <p className="text-text-secondary">We've received your details. Check your email for the invite link.</p>
-                <button 
-                  onClick={() => setStatus('idle')}
-                  className="mt-6 px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-primary font-medium transition-colors border border-white/10"
-                >
-                  Register Another
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-5 relative z-10 py-6">
-                <div className="space-y-1 mb-8 text-center">
-                  <h3 className="text-3xl font-bold text-text-primary">Reserve Your Seat</h3>
-                  <p className="text-sm text-text-secondary">
-                    {user ? `Welcome back, ${user.name.split(' ')[0]}!` : "Authenticate to continue"}
-                  </p>
-                </div>
-
-                {errorMsg && (
-                  <div className="p-3 rounded-lg bg-error-500/10 border border-error-500/20 text-error-400 text-sm mb-4">
-                    {errorMsg}
-                  </div>
-                )}
-
-                {!user ? (
-                  <div className="flex flex-col gap-4">
-                    <p className="text-center text-text-secondary mb-4">You must be signed in to register for this exclusive masterclass.</p>
-                    <button 
-                      onClick={() => setIsAuthModalOpen(true)}
-                      className="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(79,70,229,0.2)] hover:shadow-[0_0_60px_rgba(79,70,229,0.3)]"
-                    >
-                      Sign In to Register
-                      <ArrowRight size={18} />
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-1 mb-4">
-                      <span className="text-xs text-text-secondary uppercase tracking-wider">Registering As</span>
-                      <span className="font-medium text-white">{user.name}</span>
-                      <span className="text-sm text-neutral-400">{user.email}</span>
-                    </div>
-
-                    <button 
-                      disabled={status === 'loading'}
-                      type="submit" 
-                      className="w-full py-4 px-6 rounded-xl bg-white text-black font-bold hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {status === 'loading' ? (
-                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <span>Pay ₹500 & Enroll Now</span>
-                          <ArrowRight size={18} />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
+        {enrollError && (
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm max-w-3xl mx-auto">
+            <AlertCircle size={18} className="shrink-0" />
+            {enrollError}
           </div>
-        </div>
+        )}
+
+        <section className="space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/10" />
+            <h2 className="text-sm font-black uppercase tracking-widest text-neutral-500 flex items-center gap-2">
+              <Users size={13} /> Available Sessions
+            </h2>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+
+          {seminarGroups.length === 0 ? (
+            <div className="text-center py-24 text-neutral-600">
+              <Users size={40} className="mx-auto mb-4 opacity-30" />
+              <p>No seminars scheduled yet. Check back soon!</p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {seminarGroups.map(({ weekLabel, weekSeminars }) => (
+                <div key={weekLabel} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-neutral-500">{weekLabel}</h3>
+                    <div className="h-px flex-1 bg-white/10" />
+                    {weekSeminars.length > 1 && (
+                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-full border border-indigo-500/20">
+                        {weekSeminars.length} seminars
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                    {weekSeminars.map(renderCard)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

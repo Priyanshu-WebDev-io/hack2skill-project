@@ -10,7 +10,7 @@ const { logAction } = require('../automation/actionLogger');
 
 exports.createSeminar = async (req, res) => {
   try {
-    const { date, zoomLink } = req.body;
+    const { title, date, zoomLink } = req.body;
     const baseDate = date ? new Date(date) : new Date();
 
     if (Number.isNaN(baseDate.getTime())) {
@@ -18,19 +18,6 @@ exports.createSeminar = async (req, res) => {
     }
 
     const schedule = buildWeeklySeminarSchedule(baseDate);
-    const existingSeminar = await Seminar.findOne({
-      seminarYear: schedule.weekYear,
-      weekNumber: schedule.weekNumber
-    });
-
-    if (existingSeminar) {
-      return res.status(409).json({
-        success: false,
-        message: `${schedule.weekLabel} already exists.`,
-        data: existingSeminar
-      });
-    }
-
     const requestedZoomLink = String(zoomLink || '').trim();
     let resolvedZoomLink = requestedZoomLink || getConfiguredDefaultZoomLink();
 
@@ -97,7 +84,7 @@ exports.createSeminar = async (req, res) => {
     }
 
     const seminar = await Seminar.create({
-      title: schedule.weekLabel,
+      title: String(title || schedule.weekLabel).trim(),
       weekLabel: schedule.weekLabel,
       weekNumber: schedule.weekNumber,
       seminarYear: schedule.weekYear,
@@ -116,13 +103,19 @@ exports.createSeminar = async (req, res) => {
 
     res.status(201).json({ success: true, data: seminar });
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'A seminar with the same unique fields already exists.'
+      });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.getSeminars = async (req, res) => {
   try {
-    const seminars = await Seminar.find().sort({ seminarYear: 1, weekNumber: 1 });
+    const seminars = await Seminar.find().sort({ date: 1, createdAt: 1 });
     res.status(200).json({ success: true, data: seminars });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -138,6 +131,52 @@ exports.markCompleted = async (req, res) => {
       { new: true }
     );
     res.status(200).json({ success: true, data: seminar });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.generateZoomLink = async (req, res) => {
+  try {
+    const { topic, date } = req.body;
+
+    if (!topic || !date) {
+      return res.status(400).json({ success: false, message: 'topic and date are required.' });
+    }
+
+    const startTime = new Date(date);
+    if (isNaN(startTime.getTime())) {
+      return res.status(400).json({ success: false, message: 'Invalid date provided.' });
+    }
+
+    if (!isZoomConfigured()) {
+      const fallback = getConfiguredDefaultZoomLink();
+      if (fallback) {
+        return res.status(200).json({ success: true, zoomLink: fallback, source: 'default_link' });
+      }
+      return res.status(503).json({
+        success: false,
+        message: 'Zoom credentials are not configured and no DEFAULT_ZOOM_LINK is set in .env.'
+      });
+    }
+
+    try {
+      const meeting = await createZoomMeetingForSeminar({
+        topic,
+        startTime,
+        durationMinutes: Number(process.env.ZOOM_MEETING_DURATION_MINUTES || 90)
+      });
+      return res.status(200).json({ success: true, zoomLink: meeting.joinUrl, source: 'zoom_api' });
+    } catch (zoomErr) {
+      const fallback = getConfiguredDefaultZoomLink();
+      if (fallback) {
+        return res.status(200).json({ success: true, zoomLink: fallback, source: 'default_link' });
+      }
+      return res.status(502).json({
+        success: false,
+        message: `Zoom API error: ${zoomErr.response?.data?.reason || zoomErr.message}`
+      });
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

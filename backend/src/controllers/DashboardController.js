@@ -4,17 +4,63 @@ const { runAutomationCycle } = require('../automation/seminarAutomation');
 
 exports.getLogs = async (req, res) => {
   try {
-    const logs = await AutomationLog.find()
-      .populate('participantId', 'name email')
-      .populate('seminarId', 'title weekNumber date')
-      .sort({ createdAt: -1 })
-      .limit(50);
+    const page      = Math.max(1, parseInt(req.query.page)   || 1);
+    const pageSize  = Math.min(100, parseInt(req.query.limit) || 25);
+    const skip      = (page - 1) * pageSize;
+    const search    = (req.query.search || '').trim();
+    const status    = req.query.status || '';   // 'success' | 'failed' | ''
+
+    // Build filter
+    const filter = {};
+    if (status && status !== 'all') {
+      filter.status = status;
+    }
+    
+    if (search) {
+      const Participant = require('../models/Participant');
+      const participants = await Participant.find({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      const participantIds = participants.map(p => p._id);
+
+      filter.$or = [
+        { actionType: { $regex: search, $options: 'i' } },
+        { details:    { $regex: search, $options: 'i' } },
+      ];
       
-    res.status(200).json({ success: true, data: logs });
+      if (participantIds.length > 0) {
+        filter.$or.push({ participantId: { $in: participantIds } });
+      }
+    }
+
+    const [logs, total] = await Promise.all([
+      AutomationLog.find(filter)
+        .populate('participantId', 'name email')
+        .populate('seminarId', 'title weekNumber date')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize),
+      AutomationLog.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: logs,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 exports.getAutomationStatus = async (req, res) => {
   try {

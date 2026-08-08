@@ -48,6 +48,4 @@ const seminarSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-seminarSchema.index({ seminarYear: 1, weekNumber: 1 }, { unique: true });
-
 module.exports = mongoose.model('Seminar', seminarSchema);

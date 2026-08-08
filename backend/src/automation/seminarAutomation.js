@@ -15,20 +15,27 @@ const getAutoZoomLink = async (schedule, force = false) => {
   const fallbackLink = getConfiguredDefaultZoomLink();
 
   if (isZoomConfigured()) {
-    const zoomMeeting = await createZoomMeetingForSeminar({
-      topic: schedule.weekLabel,
-      startTime: schedule.seminarDate,
-      durationMinutes: Number(process.env.ZOOM_MEETING_DURATION_MINUTES || 90)
-    });
-
-    return zoomMeeting.joinUrl || fallbackLink;
+    try {
+      const zoomMeeting = await createZoomMeetingForSeminar({
+        topic: schedule.weekLabel,
+        startTime: schedule.seminarDate,
+        durationMinutes: Number(process.env.ZOOM_MEETING_DURATION_MINUTES || 90)
+      });
+      return zoomMeeting.joinUrl || fallbackLink;
+    } catch (err) {
+      // Re-throw so the caller can log it and fall back to no link,
+      // but first try the DEFAULT_ZOOM_LINK if configured
+      const zoomErr = err.response?.data || err.message;
+      console.error('[Zoom] API error, falling back to DEFAULT_ZOOM_LINK:', zoomErr);
+      if (fallbackLink) {
+        console.log(`[Zoom] Using DEFAULT_ZOOM_LINK as fallback: ${fallbackLink}`);
+        return fallbackLink;
+      }
+      throw err; // re-throw only if no fallback is available
+    }
   }
 
-  if (fallbackLink && !force) {
-    return fallbackLink;
-  }
-
-  return fallbackLink;
+  return fallbackLink || null;
 };
 
 const syncSeminarState = async (seminar, now = new Date()) => {
@@ -66,30 +73,27 @@ const ensureCurrentWeekSeminar = async (source = 'cron') => {
 
   try {
     resolvedZoomLink = await getAutoZoomLink(schedule);
+    if (!isPlaceholderZoomLink(resolvedZoomLink)) {
+      await logAction(
+        null,
+        'zoom_meeting_created',
+        'success',
+        `Created zoom link for ${schedule.weekLabel}`
+      );
+    }
   } catch (error) {
+    console.error(`[Zoom] Failed to create meeting for ${schedule.weekLabel}:`, error.response?.data || error.message);
     await logAction(
       null,
       'zoom_meeting_created',
       'failed',
       `Zoom meeting creation failed for ${schedule.weekLabel}: ${error.message}`
     );
+    // Seminar will be created without a zoom link; repairPlaceholderSeminarLinks will retry
   }
 
-  if (isPlaceholderZoomLink(resolvedZoomLink)) {
-    return {
-      created: false,
-      reason: 'zoom_link_unavailable',
-      seminar: null
-    };
-  }
-
-  await logAction(
-    null,
-    'zoom_meeting_created',
-    'success',
-    `Created zoom link for ${schedule.weekLabel}`
-  );
-
+  // Always create the seminar regardless of whether zoom succeeded.
+  // The admin can update the zoom link manually, or the repair cycle will fix it.
   const newSeminar = await Seminar.create({
     title: schedule.weekLabel,
     weekLabel: schedule.weekLabel,

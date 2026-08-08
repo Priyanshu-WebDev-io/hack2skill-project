@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, FileText, Settings, LogOut, LayoutDashboard, Calendar } from 'lucide-react';
+import { Users, FileText, LogOut, LayoutDashboard, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLayout({ children }) {
@@ -31,7 +31,6 @@ export default function AdminLayout({ children }) {
     { name: 'Seminars', href: '/admin/seminars', icon: Calendar },
     { name: 'Seminar Leads', href: '/admin/leads', icon: Users },
     { name: 'Automation Logs', href: '/admin/logs', icon: FileText },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
 
   if (loading || !user || user.role !== 'admin') {

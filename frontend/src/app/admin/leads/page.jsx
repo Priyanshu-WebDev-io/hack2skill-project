@@ -44,7 +44,8 @@ export default function LeadsPage() {
 
   const filteredLeads = leads.filter(lead => 
     lead.name.toLowerCase().includes(search.toLowerCase()) || 
-    lead.email.toLowerCase().includes(search.toLowerCase())
+    lead.email.toLowerCase().includes(search.toLowerCase()) ||
+    (lead.seminarId?.weekLabel || lead.seminarId?.title || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -80,6 +81,7 @@ export default function LeadsPage() {
             <thead className="text-xs text-neutral-500 uppercase bg-black/20 border-b border-white/5">
               <tr>
                 <th className="px-6 py-4 font-semibold">Attendee Details</th>
+                <th className="px-6 py-4 font-semibold">Registered Seminar</th>
                 <th className="px-6 py-4 font-semibold">Contact</th>
                 <th className="px-6 py-4 font-semibold">Payment Status</th>
                 <th className="px-6 py-4 font-semibold">Attendance</th>
@@ -88,10 +90,22 @@ export default function LeadsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredLeads.map((lead) => (
-                <tr key={lead._id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={lead._id} className="hover:bg-white/2 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-semibold text-white">{lead.name}</p>
                     <p className="text-xs text-neutral-500 mt-1">{lead.email}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="space-y-1">
+                      <p className="font-medium text-indigo-300">
+                        {lead.seminarId?.weekLabel || lead.seminarId?.title || 'Not assigned'}
+                      </p>
+                      {lead.seminarId?.date && (
+                        <p className="text-xs text-neutral-500">
+                          {new Date(lead.seminarId.date).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-neutral-400">
@@ -120,7 +134,7 @@ export default function LeadsPage() {
               ))}
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">
                     No leads found.
                   </td>
                 </tr>

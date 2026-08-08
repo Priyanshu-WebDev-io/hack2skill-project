@@ -36,10 +36,14 @@ app.use('/api/auth', authRoutes);
 // Connect to DB and Start Server
 const PORT = process.env.PORT;
 const MONGODB_URI = process.env.MONGODB_URI;
+const Seminar = require('./models/Seminar');
 
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
+    Seminar.syncIndexes().catch(err => {
+      console.error('Failed to sync seminar indexes:', err);
+    });
     seedAdmin(); // Run seed after DB connects
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
