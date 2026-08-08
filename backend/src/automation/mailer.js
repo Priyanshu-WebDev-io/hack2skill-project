@@ -56,6 +56,9 @@ const sendZoomLinkEmail = async (participant, seminar) => {
     console.error('[Mailer] Error sending email:', error);
     await logAction(participant._id, 'email_sent', 'failed', error.message);
     return false;
+  }
+};
+
 const sendOtpEmail = async (user, otpCode) => {
   try {
     if (!transporter) await initTransporter();
