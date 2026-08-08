@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Calendar, Plus, Clock, Video, CheckCircle2, X, AlertCircle, Link2, FileText, CalendarClock, RefreshCw } from 'lucide-react';
 import seminarService from '@/services/seminarService';
 
@@ -65,11 +65,7 @@ export default function SeminarsPage() {
   const [fieldErrors, setFieldErrors] = useState({ ...INITIAL_ERRORS });
   const [touched, setTouched] = useState({});
 
-  useEffect(() => {
-    fetchSeminars();
-  }, []);
-
-  const fetchSeminars = async () => {
+  const fetchSeminars = useCallback(async () => {
     setLoading(true);
     try {
       const data = await seminarService.getSeminars();
@@ -79,7 +75,12 @@ export default function SeminarsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchSeminars();
+  }, [fetchSeminars]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

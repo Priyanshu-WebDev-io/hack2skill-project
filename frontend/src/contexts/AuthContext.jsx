@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
     
     if (token && savedUser) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(JSON.parse(savedUser));
         // We could optionally fetch fresh user data from API here
       } catch (e) {
@@ -27,8 +28,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const setAuth = (token, userData) => {
-    Cookies.set('token', token, { expires: 7 }); // 7 days
-    Cookies.set('user', JSON.stringify(userData), { expires: 7 });
+    const isProd = process.env.NODE_ENV === 'production';
+    Cookies.set('token', token, { expires: 7, secure: isProd, sameSite: 'strict' });
+    Cookies.set('user', JSON.stringify(userData), { expires: 7, secure: isProd, sameSite: 'strict' });
     setUser(userData);
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Search, Phone, CheckCircle2, Clock, AlertCircle, Calendar, Users, Filter, RefreshCcw } from 'lucide-react';
 import seminarService from '@/services/seminarService';
 import participantService from '@/services/participantService';
@@ -12,15 +12,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchSeminars();
-  }, []);
-
-  useEffect(() => {
-    fetchLeads();
-  }, [selectedSeminarId]);
-
-  const fetchSeminars = async () => {
+  const fetchSeminars = useCallback(async () => {
     try {
       const data = await seminarService.getSeminars();
       const allSeminars = data.data || [];
@@ -28,9 +20,9 @@ export default function LeadsPage() {
     } catch (error) {
       console.error('Failed to fetch seminars', error);
     }
-  };
+  }, []);
 
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
       const filters = selectedSeminarId !== 'all' ? { seminarId: selectedSeminarId } : {};
@@ -41,7 +33,17 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSeminarId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchSeminars();
+  }, [fetchSeminars]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLeads();
+  }, [fetchLeads]);
 
 
 

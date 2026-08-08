@@ -121,7 +121,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           <div className="text-center">
             <h2 className="text-2xl font-bold text-white mb-2">Verify your email</h2>
             <p className="text-sm text-neutral-400 mb-8">
-              We've sent a 6-digit code to <span className="text-white font-medium">{formData.email}</span>.
+              We&apos;ve sent a 6-digit code to <span className="text-white font-medium">{formData.email}</span>.
             </p>
 
             <form onSubmit={handleVerifyOtp} className="space-y-4">
@@ -159,7 +159,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
             </form>
 
             <div className="mt-6 text-sm text-neutral-400">
-              Didn't receive the code?{' '}
+              Didn&apos;t receive the code?{' '}
               <button
                 type="button"
                 onClick={handleResendOtp}

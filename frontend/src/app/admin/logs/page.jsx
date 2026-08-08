@@ -48,8 +48,8 @@ export default function LogsPage() {
     }
   }, [page, pageSize, search, statusFilter]);
 
-  // Fetch whenever params change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLogs();
   }, [fetchLogs]);
 

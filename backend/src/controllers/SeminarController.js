@@ -113,6 +113,19 @@ exports.createSeminar = async (req, res) => {
   }
 };
 
+exports.deleteSeminar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Seminar.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Seminar not found' });
+    }
+    res.status(200).json({ success: true, message: 'Seminar deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.getSeminars = async (req, res) => {
   try {
     const seminars = await Seminar.find().sort({ date: 1, createdAt: 1 });

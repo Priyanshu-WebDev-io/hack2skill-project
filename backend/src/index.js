@@ -2,15 +2,43 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+const errorHandler = require('./middlewares/errorHandler');
 
 dotenv.config();
 
 const app = express();
 
+// Security: Set secure HTTP headers
+app.use(helmet());
+
+// Efficiency: Compress payload responses
+app.use(compression());
+
+// Security: Prevent DDoS and API Spam
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { success: false, message: 'Too many requests, please try again later.' }
+});
+app.use(limiter);
+
 app.use(express.json());
+
+// Security: Restrict CORS
+const allowedOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', process.env.FRONTEND_URL].filter(Boolean);
 app.use(cors({
-  origin: '*',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  credentials: true,
 }));
 
 app.get('/health', (req, res) => {
@@ -35,6 +63,9 @@ app.use('/api/participants', participantRoutes);
 app.use('/api/automation', automationRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/zoom', zoomRoutes);
+
+// Code Quality: Global Error Handler
+app.use(errorHandler);
 
 // Connect to DB and Start Server
 const PORT = process.env.PORT;

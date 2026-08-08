@@ -2,10 +2,16 @@ const express = require('express');
 const router = express.Router();
 const participantController = require('../controllers/ParticipantController');
 const certificateController = require('../controllers/CertificateController');
+const { requireAuth, requireAdmin } = require('../middlewares/authMiddleware');
 
+// Public
 router.post('/register', participantController.registerParticipant);
-router.post('/:id/attendance', participantController.markAttendance);
-router.get('/', participantController.getParticipants);
-router.get('/:id/certificate', certificateController.generateCertificate);
+
+// Admin Only
+router.post('/:id/attendance', requireAuth, requireAdmin, participantController.markAttendance);
+router.get('/', requireAuth, requireAdmin, participantController.getParticipants);
+
+// Authenticated User
+router.get('/:id/certificate', requireAuth, certificateController.generateCertificate);
 
 module.exports = router;

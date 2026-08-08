@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const dashboardController = require('../controllers/DashboardController');
+const { requireAuth, requireAdmin } = require('../middlewares/authMiddleware');
 
-router.get('/logs', dashboardController.getLogs);
-router.get('/status', dashboardController.getAutomationStatus);
-router.post('/run', dashboardController.runAutomationNow);
+router.get('/logs', requireAuth, requireAdmin, dashboardController.getLogs);
+router.get('/status', requireAuth, requireAdmin, dashboardController.getAutomationStatus);
+router.post('/run', requireAuth, requireAdmin, dashboardController.runAutomationNow);
 
 module.exports = router;

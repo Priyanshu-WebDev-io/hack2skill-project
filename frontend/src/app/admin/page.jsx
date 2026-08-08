@@ -16,33 +16,33 @@ export default function AdminOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    async function fetchStats() {
+      try {
+        const [leadsRes, logsRes] = await Promise.all([
+          participantService.getParticipants(),
+          automationService.getAutomationLogs({ limit: 5 })
+        ]);
+        
+        const leads = leadsRes.data || [];
+        const logs = logsRes.data || [];
+        
+        const successfulPayments = leads.filter(l => l.paymentStatus === 'success').length;
+
+        setStats({
+          totalLeads: leads.length,
+          successfulPayments,
+          totalLogs: logsRes.pagination?.total || 0,
+        });
+        setRecentLogs(logs.slice(0, 5));
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     fetchStats();
   }, []);
-
-  async function fetchStats() {
-    try {
-      const [leadsRes, logsRes] = await Promise.all([
-        participantService.getParticipants(),
-        automationService.getAutomationLogs({ limit: 5 })
-      ]);
-      
-      const leads = leadsRes.data || [];
-      const logs = logsRes.data || [];
-      
-      const successfulPayments = leads.filter(l => l.paymentStatus === 'success').length;
-
-      setStats({
-        totalLeads: leads.length,
-        successfulPayments,
-        totalLogs: logsRes.pagination?.total || 0,
-      });
-      setRecentLogs(logs.slice(0, 5));
-    } catch (error) {
-      console.error("Failed to fetch stats", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const getLogIcon = (actionType) => {
     if (actionType === 'email_sent') return <span className="text-blue-400">📧</span>;

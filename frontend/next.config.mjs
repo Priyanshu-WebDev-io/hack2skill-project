@@ -6,12 +6,20 @@ const nextConfig = {
         source: '/(.*)',
         headers: [
           {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin-allow-popups',
+            key: 'X-Frame-Options',
+            value: 'DENY', // Prevents Clickjacking
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff', // Prevents MIME-sniffing
           },
           {
             key: 'Referrer-Policy',
-            value: 'no-referrer-when-downgrade', // Ensure origin is passed to Google
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload', // Enforces HTTPS
           },
         ],
       },

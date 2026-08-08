@@ -59,6 +59,7 @@ export default function Home() {
     if (user?.email) {
       fetchRegistrations(user.email);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMyRegistrations({});
     }
   }, [user]);
