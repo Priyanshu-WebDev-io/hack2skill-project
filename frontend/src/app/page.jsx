@@ -63,16 +63,16 @@ export default function Home() {
     }
   }, [user]);
 
-  const fetchSeminars = async () => {
+  async function fetchSeminars() {
     try {
       const res = await seminarService.getSeminars();
       setSeminars((res.data || []).sort((a, b) => new Date(a.date) - new Date(b.date)));
     } catch (err) {
       console.error('Failed to fetch seminars', err);
     }
-  };
+  }
 
-  const fetchRegistrations = async (email) => {
+  async function fetchRegistrations(email) {
     try {
       const res = await participantService.getParticipants({ search: email });
       const exactMatches = (res.data || []).filter((participant) => participant.email?.toLowerCase() === email.toLowerCase());
@@ -89,7 +89,7 @@ export default function Home() {
     } catch (err) {
       console.error('Failed to fetch participant registrations', err);
     }
-  };
+  }
 
   const handleEnroll = async (seminar) => {
     if (!user) {
@@ -324,34 +324,6 @@ export default function Home() {
           <p className="text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed">
             Explore every seminar in card form, choose the one you want, and enroll directly in that session.
           </p>
-
-          <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto pt-4">
-            {[
-              { icon: Calendar, text: 'Every week', sub: 'Multiple seminars can appear in the same week' },
-              { icon: Clock, text: 'Mon-Sat enrollment', sub: 'Sunday sessions with automatic Zoom links' },
-              { icon: MapPin, text: 'Flexible cohorts', sub: 'Enroll in the seminar you want' },
-              { icon: Sparkles, text: 'Certificate Included', sub: 'After attendance and completion' },
-            ].map((item, index) => (
-              <div key={index} className="flex items-start gap-3 text-left p-4 rounded-2xl bg-white/5 border border-white/10">
-                <div className="p-2 rounded-lg bg-white/5 border border-white/10 text-indigo-400">
-                  <item.icon size={18} />
-                </div>
-                <div>
-                  <p className="font-semibold text-white">{item.text}</p>
-                  <p className="text-xs text-neutral-500 mt-1">{item.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {!user && (
-            <button
-              onClick={() => setIsAuthModalOpen(true)}
-              className="inline-flex items-center gap-2 mt-2 px-8 py-3.5 rounded-2xl bg-white text-black font-bold hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]"
-            >
-              Sign In to Enroll <ArrowRight size={18} />
-            </button>
-          )}
         </div>
 
         {enrollError && (

@@ -43,12 +43,6 @@ export default function LeadsPage() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    if (status === 'success') return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 size={12}/> Paid</span>;
-    if (status === 'pending') return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><Clock size={12}/> Pending</span>;
-    return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-red-500/10 text-red-400 border border-red-500/20"><AlertCircle size={12}/> Failed</span>;
-  };
-
   const handleMarkAttended = async (id) => {
     try {
       await participantService.markAttendance(id);
@@ -165,7 +159,6 @@ export default function LeadsPage() {
                 <th className="px-6 py-4 font-semibold">Attendee Details</th>
                 <th className="px-6 py-4 font-semibold">Registered Seminar</th>
                 <th className="px-6 py-4 font-semibold">Contact</th>
-                <th className="px-6 py-4 font-semibold">Payment Status</th>
                 <th className="px-6 py-4 font-semibold">Attendance</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
@@ -195,9 +188,6 @@ export default function LeadsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {getStatusBadge(lead.paymentStatus)}
-                  </td>
-                  <td className="px-6 py-4">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${lead.attendanceStatus === 'attended' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-neutral-800 text-neutral-400'}`}>
                       {lead.attendanceStatus === 'attended' ? 'Attended' : 'Pending'}
                     </span>
@@ -216,7 +206,7 @@ export default function LeadsPage() {
               ))}
               {filteredLeads.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-neutral-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-neutral-500">
                     No leads found.
                   </td>
                 </tr>
