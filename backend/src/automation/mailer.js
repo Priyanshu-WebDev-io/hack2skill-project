@@ -56,31 +56,35 @@ const sendZoomLinkEmail = async (participant, seminar) => {
     console.error('[Mailer] Error sending email:', error);
     await logAction(participant._id, 'email_sent', 'failed', error.message);
     return false;
-  }
-};
-
-const sendVerificationEmail = async (user, token) => {
+const sendOtpEmail = async (user, otpCode) => {
   try {
     if (!transporter) await initTransporter();
-
-    // Frontend URL where the user will click to verify
-    const verificationUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/verify/${token}`;
 
     const mailOptions = {
       from: '"Seminar Autopilot" <noreply@seminar.com>',
       to: user.email,
-      subject: `Verify your email address`,
-      text: `Hi ${user.name},\n\nPlease verify your email by clicking the following link:\n${verificationUrl}`,
-      html: `<p>Hi ${user.name},</p><p>Please verify your email by clicking the link below:</p><p><a href="${verificationUrl}">${verificationUrl}</a></p>`
+      subject: `Your Verification Code: ${otpCode}`,
+      text: `Hi ${user.name},\n\nYour 6-digit verification code is: ${otpCode}\nThis code will expire in 10 minutes.`,
+      html: `
+        <div style="font-family: sans-serif; max-w-md; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+          <h2 style="color: #4F46E5;">Email Verification</h2>
+          <p>Hi ${user.name},</p>
+          <p>Please use the following 6-digit code to verify your account.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111;">${otpCode}</span>
+          </div>
+          <p style="color: #666; font-size: 12px;">This code will expire in 10 minutes.</p>
+        </div>
+      `
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`[Mailer] Verification email sent to ${user.email}: %s`, info.messageId);
+    console.log(`[Mailer] OTP email sent to ${user.email}: %s`, info.messageId);
     return true;
   } catch (error) {
-    console.error('[Mailer] Error sending verification email:', error);
+    console.error('[Mailer] Error sending OTP email:', error);
     return false;
   }
 };
 
-module.exports = { sendZoomLinkEmail, sendVerificationEmail };
+module.exports = { sendZoomLinkEmail, sendOtpEmail };

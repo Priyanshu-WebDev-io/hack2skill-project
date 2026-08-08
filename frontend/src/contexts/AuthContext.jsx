@@ -56,11 +56,16 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
-  const verifyEmail = async (token) => {
-    const res = await apiService.verifyEmail(token);
+  const verifyOtp = async (email, otp) => {
+    const res = await apiService.verifyOtp({ email, otp });
     if (res.success && res.token) {
       setAuth(res.token, res.user);
     }
+    return res;
+  };
+
+  const resendOtp = async (email) => {
+    const res = await apiService.resendOtp({ email });
     return res;
   };
 
@@ -71,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, registerUser, googleLogin, verifyEmail, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, registerUser, googleLogin, verifyOtp, resendOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
-const { sendVerificationEmail } = require('../automation/mailer');
+const { sendOtpEmail } = require('../automation/mailer');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -21,20 +21,24 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
     user = await User.create({ 
       name, 
       email, 
       password,
       mobileNumber,
-      verificationToken: crypto.randomBytes(32).toString('hex'),
+      otp: otpCode,
+      otpExpires,
       isVerified: false
     });
     
-    await sendVerificationEmail(user, user.verificationToken);
+    await sendOtpEmail(user, otpCode);
     
     res.status(201).json({ 
       success: true, 
-      message: 'Registration successful! Please check your email to verify your account.'
+      message: 'Registration successful! Please check your email for the OTP to verify your account.'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -124,20 +128,33 @@ exports.googleLogin = async (req, res) => {
   }
 };
 
-exports.verifyEmail = async (req, res) => {
+exports.verifyOtp = async (req, res) => {
   try {
-    const { token } = req.params;
+    const { email, otp } = req.body;
     
-    const user = await User.findOne({ verificationToken: token });
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: 'User is already verified' });
+    }
+
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    if (new Date() > user.otpExpires) {
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
     }
 
     user.isVerified = true;
-    user.verificationToken = undefined;
+    user.otp = undefined;
+    user.otpExpires = undefined;
     await user.save();
 
-    // Optionally generate a JWT to log them in automatically
+    // Generate JWT to log them in automatically
     const jwtToken = generateToken(user._id, user.role);
     
     res.status(200).json({ 
@@ -147,7 +164,34 @@ exports.verifyEmail = async (req, res) => {
       user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
-    console.error('Verify email error:', error);
-    res.status(500).json({ success: false, message: 'Email verification failed' });
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ success: false, message: 'OTP verification failed' });
+  }
+};
+
+exports.resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: 'User is already verified' });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otpCode;
+    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await user.save();
+
+    await sendOtpEmail(user, otpCode);
+
+    res.status(200).json({ success: true, message: 'A new OTP has been sent to your email.' });
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({ success: false, message: 'Failed to resend OTP' });
   }
 };

@@ -32,8 +32,12 @@ const apiService = {
     const response = await api.post('/auth/google', payload);
     return response.data;
   },
-  verifyEmail: async (token) => {
-    const response = await api.get(`/auth/verify/${token}`);
+  verifyOtp: async (payload) => {
+    const response = await api.post('/auth/verify-otp', payload);
+    return response.data;
+  },
+  resendOtp: async (payload) => {
+    const response = await api.post('/auth/resend-otp', payload);
     return response.data;
   },
 

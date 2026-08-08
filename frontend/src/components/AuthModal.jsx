@@ -6,11 +6,13 @@ import { X, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 
 export default function AuthModal({ isOpen, onClose, onSuccess }) {
-  const { login, registerUser, googleLogin } = useAuth();
+  const { login, registerUser, googleLogin, verifyOtp, resendOtp } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [verificationSent, setVerificationSent] = useState(false);
+  const [otpView, setOtpView] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,7 +36,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         const res = await registerUser(formData.name, formData.email, formData.password, formData.mobileNumber);
         if (res.success && !res.token) {
           // Token is missing, which means verification is required
-          setVerificationSent(true);
+          setOtpView(true);
+          startResendCooldown();
         } else {
           // Fallback just in case
           onSuccess?.();
@@ -46,6 +49,50 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await verifyOtp(formData.email, otp);
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid or expired OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      await resendOtp(formData.email);
+      startResendCooldown();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startResendCooldown = () => {
+    setResendCooldown(30);
+    const interval = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
@@ -70,22 +117,58 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
           <X size={20} />
         </button>
 
-        {verificationSent ? (
-          <div className="text-center py-6">
-            <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Check your email</h2>
-            <p className="text-neutral-400 mb-6">
-              We've sent a verification link to <span className="text-white font-medium">{formData.email}</span>. 
-              Please click the link to activate your account.
+        {otpView ? (
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white mb-2">Verify your email</h2>
+            <p className="text-sm text-neutral-400 mb-8">
+              We've sent a 6-digit code to <span className="text-white font-medium">{formData.email}</span>.
             </p>
-            <button 
-              onClick={() => { setVerificationSent(false); setIsLogin(true); }}
-              className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors"
-            >
-              Return to Login
-            </button>
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="space-y-1.5 text-left">
+                <label className="text-xs font-medium text-neutral-300">Authentication Code</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
+                    <Lock size={16} />
+                  </div>
+                  <input
+                    required
+                    type="text"
+                    maxLength={6}
+                    value={otp}
+                    onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full pl-10 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl focus:border-indigo-500 text-white placeholder-neutral-600 text-center tracking-[1em] text-lg font-mono"
+                    placeholder="000000"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-70 mt-4"
+              >
+                {loading ? 'Verifying...' : 'Verify OTP'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-sm text-neutral-400">
+              Didn't receive the code?{' '}
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0 || loading}
+                className="text-indigo-400 font-medium hover:text-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend OTP'}
+              </button>
+            </div>
           </div>
         ) : (
           <>
