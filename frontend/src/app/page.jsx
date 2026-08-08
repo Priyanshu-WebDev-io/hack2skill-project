@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from 'react';
-import { Sparkles, Calendar, Clock, MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
-import apiService from '@/services/apiService';
+import { useState } from "react";
+import { ArrowRight, CheckCircle2, Shield, Zap, Target, Sparkles, Calendar, Clock, MapPin } from "lucide-react";
+import apiService from "@/services/apiService";
+import { useAuth } from "@/contexts/AuthContext";
+import Navbar from "@/components/Navbar";
+import AuthModal from "@/components/AuthModal";
 
 export default function Home() {
+  const { user } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    mobileNumber: '',
-    whatsappNumber: '',
+    name: "",
+    email: "",
+    mobileNumber: "",
     currentOccupation: '',
     highestQualification: '',
   });
@@ -21,12 +26,21 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Intercept if not logged in
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     setStatus('loading');
     setErrorMsg('');
     
     try {
       await apiService.registerParticipant({
         ...formData,
+        name: user.name || formData.name, // Pre-fill from user context if available
+        email: user.email || formData.email,
         amount: 500, // example amount
         seminarId: process.env.NEXT_PUBLIC_DEFAULT_SEMINAR_ID,
       });
@@ -39,9 +53,19 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-text-primary font-sans selection:bg-primary-500/30">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-indigo-500/30">
+      <Navbar onAuthClick={() => setIsAuthModalOpen(true)} />
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+        onSuccess={() => {
+          console.log("Auth success");
+        }}
+      />
+      
+      {/* Background Effects */}
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b')] bg-cover bg-center opacity-10 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/80 to-black pointer-events-none" />
       
       <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 min-h-screen flex flex-col lg:flex-row items-center gap-16">
         

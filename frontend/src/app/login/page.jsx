@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
-// import { GoogleLogin } from '@react-oauth/google';
-import apiService from '@/services/apiService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
+  const { login, googleLogin } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,28 +20,19 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     
-    // Simulating login for MVP
     try {
-      // In a real app, this would call your auth endpoint
-      // const res = await apiService.login(formData);
-      // localStorage.setItem('token', res.token);
-      
-      // Fake successful login
-      setTimeout(() => {
-        router.push('/admin');
-      }, 800);
-      
+      await login(formData.email, formData.password);
+      router.push('/admin');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      // In a real app:
-      // const res = await apiService.googleLogin(credentialResponse);
-      // localStorage.setItem('token', res.token);
+      await googleLogin(credentialResponse.credential);
       router.push('/admin');
     } catch (err) {
       setError('Google login failed.');
@@ -160,8 +151,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="mt-6">
-              <button className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-white/10 transition-colors">
+            <div className="mt-4 flex justify-center">
+              {/* If you wanted a real GoogleLogin button here, import it from '@react-oauth/google' and use it. 
+                  For now we rely on the AuthModal or you can add it directly. */}
+              <button onClick={() => alert("Please use the Google Login on the landing page or add the component here.")} className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm font-medium text-white shadow-sm hover:bg-white/10 transition-colors">
                 <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
                   <path d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z" fill="#EA4335"/>
                   <path d="M23.49 12.275C23.49 11.49 23.415 10.73 23.3 10H12V14.51H18.47C18.18 15.99 17.34 17.25 16.08 18.1L19.945 21.1C22.2 19.01 23.49 15.92 23.49 12.275Z" fill="#4285F4"/>

@@ -1,11 +1,30 @@
 "use client";
 
+import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Users, FileText, Settings, LogOut, LayoutDashboard, Calendar } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, logout } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else if (user.role !== 'admin') {
+        router.push('/');
+      }
+    }
+  }, [user, loading, router]);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -14,6 +33,14 @@ export default function AdminLayout({ children }) {
     { name: 'Automation Logs', href: '/admin/logs', icon: FileText },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
   ];
+
+  if (loading || !user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-950 flex text-neutral-300 font-sans">
@@ -44,7 +71,10 @@ export default function AdminLayout({ children }) {
         </nav>
         
         <div className="p-4 border-t border-white/10">
-          <button className="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded-xl font-medium text-neutral-400 hover:bg-white/5 hover:text-red-400 transition-colors">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded-xl font-medium text-neutral-400 hover:bg-white/5 hover:text-red-400 transition-colors"
+          >
             <LogOut size={18} />
             Sign out
           </button>

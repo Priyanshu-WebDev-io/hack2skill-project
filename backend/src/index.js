@@ -21,6 +21,7 @@ app.get('/health', (req, res) => {
 const seminarRoutes = require('./routes/seminarRoutes');
 const participantRoutes = require('./routes/participantRoutes');
 const automationRoutes = require('./routes/automationRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // Import Automation Cron
 const { initCronJobs } = require('./automation/cronJobs');
@@ -29,6 +30,7 @@ const { initCronJobs } = require('./automation/cronJobs');
 app.use('/api/seminars', seminarRoutes);
 app.use('/api/participants', participantRoutes);
 app.use('/api/automation', automationRoutes);
+app.use('/api/auth', authRoutes);
 
 // Connect to DB and Start Server
 const PORT = process.env.PORT;
