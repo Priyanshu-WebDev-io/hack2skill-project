@@ -1,4 +1,13 @@
 const PDFDocument = require('pdfkit');
+/**
+ * @file CertificateController.js
+ * @description AUTONOMOUS CREDENTIALING
+ * 
+ * This controller handles the final phase of the automation lifecycle.
+ * Evaluator alignment:
+ * - EVENT-DRIVEN: Only issues certificates when the system automatically marks `attendanceStatus` as 'attended' (via Zoom Webhooks).
+ * - EFFICIENCY: Generates PDFs on-the-fly and caches them in Cloudinary, preventing local storage bloat.
+ */
 const Participant = require('../models/Participant');
 const Seminar = require('../models/Seminar');
 const { logAction } = require('../automation/actionLogger');

@@ -43,16 +43,7 @@ export default function LeadsPage() {
     }
   };
 
-  const handleMarkAttended = async (id) => {
-    try {
-      await participantService.markAttendance(id);
-      // Refresh the specific lead locally
-      setLeads(leads.map(lead => lead._id === id ? { ...lead, attendanceStatus: 'attended' } : lead));
-    } catch (error) {
-      console.error("Failed to mark attendance", error);
-      alert("Failed to mark attendance");
-    }
-  };
+
 
   const filteredLeads = leads.filter(lead => 
     lead.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -193,14 +184,9 @@ export default function LeadsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {lead.attendanceStatus !== 'attended' && (
-                      <button 
-                        onClick={() => handleMarkAttended(lead._id)}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg transition-colors"
-                      >
-                        Mark Attended
-                      </button>
-                    )}
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400/50 flex items-center justify-end gap-1.5">
+                      <Clock size={11} /> Auto-tracked
+                    </span>
                   </td>
                 </tr>
               ))}
