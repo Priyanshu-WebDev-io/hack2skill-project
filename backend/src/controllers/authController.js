@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
-const { sendOtpEmail } = require('../automation/mailer');
+const { sendOtpEmail, sendPasswordResetEmail } = require('../automation/mailer');
+const crypto = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -192,5 +193,76 @@ exports.resendOtp = async (req, res) => {
   } catch (error) {
     console.error('Resend OTP error:', error);
     res.status(500).json({ success: false, message: 'Failed to resend OTP' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      // Don't leak whether the user exists, just return success
+      return res.status(200).json({ success: true, message: 'If that email exists, a password reset link has been sent.' });
+    }
+
+    if (user.googleId && !user.password) {
+      return res.status(400).json({ success: false, message: 'This account uses Google Login. Password reset is not applicable.' });
+    }
+
+    // Generate secure reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    await user.save();
+
+    // The frontend URL needs to be constructed. Defaulting to process.env.FRONTEND_URL or local
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/password-change?token=${resetToken}`;
+
+    await sendPasswordResetEmail(user, resetUrl);
+
+    res.status(200).json({ success: true, message: 'If that email exists, a password reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Failed to process forgot password request' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Token and new password are required' });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Password reset token is invalid or has expired.' });
+    }
+
+    // Update password (hashing happens automatically in pre-save middleware)
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    // Optionally generate token to auto log them in
+    const jwtToken = generateToken(user._id, user.role);
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Password successfully reset!',
+      token: jwtToken,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Failed to reset password' });
   }
 };

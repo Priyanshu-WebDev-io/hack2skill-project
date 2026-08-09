@@ -146,4 +146,38 @@ const sendOtpEmail = async (user, otpCode) => {
   }
 };
 
-module.exports = { sendZoomLinkEmail, sendWeeklyFollowUpEmail, sendOtpEmail };
+const sendPasswordResetEmail = async (user, resetUrl) => {
+  try {
+    if (!transporter) await initTransporter();
+
+    const mailOptions = {
+      from: `"SeminarPilot Admin" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: 'Reset Your Password - SeminarPilot',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4f46e5;">Password Reset Request</h2>
+          <p>Hi ${user.name},</p>
+          <p>We received a request to reset your password. If you didn't make this request, you can safely ignore this email.</p>
+          <p>Click the button below to reset your password. This link will expire in 15 minutes.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
+          </div>
+          <p style="font-size: 12px; color: #6b7280; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            ${resetUrl}
+          </p>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.info(`Password reset email sent to ${user.email} (Message ID: ${info.messageId})`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    throw error;
+  }
+};
+
+module.exports = { sendZoomLinkEmail, sendWeeklyFollowUpEmail, sendOtpEmail, sendPasswordResetEmail };

@@ -112,7 +112,7 @@ export default function LoginPage() {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                <a href="/forgot-password" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
                   Forgot password?
                 </a>
               </div>
@@ -160,6 +160,12 @@ export default function LoginPage() {
                 shape="pill"
               />
             </div>
+          </div>
+          <div className="mt-6 text-center text-sm text-neutral-400">
+            Don&apos;t have an account?{' '}
+            <a href="/signup" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+              Sign up
+            </a>
           </div>
         </div>
       </div>

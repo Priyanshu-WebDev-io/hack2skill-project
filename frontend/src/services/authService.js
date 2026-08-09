@@ -21,6 +21,14 @@ const authService = {
     const response = await apiClient.post('/auth/resend-otp', payload);
     return response.data;
   },
+  forgotPassword: async (payload) => {
+    const response = await apiClient.post('/auth/forgot-password', payload);
+    return response.data;
+  },
+  resetPassword: async (payload) => {
+    const response = await apiClient.post('/auth/reset-password', payload);
+    return response.data;
+  },
 };
 
 export default authService;

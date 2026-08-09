@@ -71,6 +71,19 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
+  const forgotPassword = async (email) => {
+    const res = await authService.forgotPassword({ email });
+    return res;
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    const res = await authService.resetPassword({ token, newPassword });
+    if (res.success && res.token) {
+      setAuth(res.token, res.user);
+    }
+    return res;
+  };
+
   const logout = () => {
     Cookies.remove('token');
     Cookies.remove('user');
@@ -78,7 +91,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, registerUser, googleLogin, verifyOtp, resendOtp, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, registerUser, googleLogin, verifyOtp, resendOtp, forgotPassword, resetPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );
